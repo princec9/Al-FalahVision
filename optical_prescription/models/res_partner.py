@@ -10,8 +10,8 @@ class ResPartner(models.Model):
 
     dob = fields.Date(string='DOB')
     emp_personal = fields.Char(string="Employee Personal ID")
-    # is_optometrist_person = fields.Boolean(string="Optometrist")
-    # is_technician = fields.Boolean(string="Is Technician")
+    is_optometrist_person = fields.Boolean(string="Optometrist")
+    is_technician = fields.Boolean(string="Is Technician")
     # reference_company = fields.Char("Company")
     _rec_names_search = ['complete_name', 'email', 'phone', 'ref', 'vat', 'company_registry',
                          'emp_personal']  # TODO vat must be sanitized the same way for storing/searching

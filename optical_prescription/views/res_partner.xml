@@ -40,7 +40,8 @@
 
             <xpath expr="//div[@class='o_address_format']" position="after">
                 <field name="dob"/>
-                <!-- <field name="is_optometrist_person"/> -->
+                 <field name="is_optometrist_person"/>
+                 <field name="is_technician"/>
             </xpath>
 
             <xpath expr="//field[@name='parent_id']" position="after">
