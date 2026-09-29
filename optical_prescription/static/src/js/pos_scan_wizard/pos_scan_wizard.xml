@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="optical_prescription.PosScanWizard">
+        <Dialog title="'Scan Delivery'" footer="false" size="'md'">
+            <div class="text-center mb-3">
+                <h4><i class="fa fa-barcode me-1" aria-hidden="true"/> Lot Verification</h4>
+                <div class="alert alert-info text-center mb-0">
+                    <h4 class="mb-0">
+                        <t t-esc="scannedCount"/> / <t t-esc="totalCount"/>
+                    </h4>
+                    <span class="text-muted">Lots Scanned</span>
+                </div>
+            </div>
+
+            <div class="alert alert-info text-center mb-3">
+                <div class="mb-2">
+                    <i class="fa fa-barcode me-1" aria-hidden="true"/> Scan Serial Number
+                </div>
+                <input type="text"
+                       class="form-control text-center mb-2"
+                       placeholder="Scan barcode here..."
+                       t-model="state.barcode"
+                       t-att-disabled="state.busy"
+                       t-on-keydown="(ev) => ev.key === 'Enter' &amp;&amp; this.onScan()"
+                       autofocus="autofocus"/>
+                <button class="btn btn-primary" t-att-disabled="state.busy" t-on-click="onScan">
+                    <i class="fa fa-barcode me-1" aria-hidden="true"/> Scan
+                </button>
+            </div>
+
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Lot / Serial</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="state.rows" t-as="row" t-key="row.productId + '-' + row.lotName">
+                        <tr t-att-class="row.scanned ? 'table-success' : ''">
+                            <td t-esc="row.productName"/>
+                            <td t-esc="row.lotName"/>
+                            <td class="text-end">
+                                <span t-if="row.scanned" class="text-success">
+                                    <i class="fa fa-check-circle" aria-hidden="true"/> Scanned
+                                </span>
+                                <span t-else="" class="text-muted">Pending</span>
+                            </td>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-secondary" t-on-click="onCancel">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!allScanned" t-on-click="onConfirm">
+                    Confirm Scan
+                </button>
+            </div>
+        </Dialog>
+    </t>
+</templates>

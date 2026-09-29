@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="invoice_prescription_inherit"
+              inherit_id="account.report_invoice_document">
+
+        <xpath expr="//div[@id='payment_term']" position="before">
+
+            <div class="col-6 rx-table-wrapper">
+
+                <div class="rx-rounded-box">
+
+                    <table class="rx-table" id="prescription_table">
+
+                        <thead>
+                            <tr class="rx-header">
+                                <th></th>
+                                <th>SPH</th>
+                                <th>CYL</th>
+                                <th>AXIS</th>
+                                <th>ADD</th>
+                                <th>IPD</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <!-- IF DATA EXISTS -->
+                            <t t-if="o.prescription_ids">
+
+                                <t t-foreach="o.prescription_ids" t-as="line">
+
+                                    <!-- RIGHT -->
+                                    <tr>
+                                        <td class="rx-eye">R</td>
+
+                                        <td>
+                                            <span t-esc="line.new_rsph.name if line.new_rsph else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_rcyl.name if line.new_rcyl else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_raxis"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_radd.name if line.new_radd else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_rpd"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- LEFT -->
+
+                                    <tr>
+                                        <td class="rx-eye">L</td>
+
+                                        <td>
+                                            <span t-esc="line.new_lsph.name if line.new_lsph else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_lcyl.name if line.new_lcyl else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_laxis"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_ladd.name if line.new_ladd else ''"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="line.new_lpd"/>
+                                        </td>
+                                    </tr>
+
+                                    <tr t-if="line.note">
+                                        <td colspan="6" class="rx-note-cell">
+                                            <div class="rx-note-text">
+                                                <strong>Note:</strong>
+                                                <span t-esc="line.note"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                </t>
+
+                            </t>
+
+                            <!-- IF NO DATA → SHOW EMPTY ROWS -->
+                            <t t-else="">
+
+                                <tr>
+                                    <td class="rx-eye">R</td>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                </tr>
+
+                                <tr>
+                                    <td class="rx-eye">L</td>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                </tr>
+
+                            </t>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div class="rx-prescribed-by" id="prescribed_details">
+                    <strong>Prescribed By:</strong>
+                    <span t-if="o.own_prescription"
+                          t-esc="o.prescribe_name_by_id.name"/>
+                    <span t-else=""
+                          t-esc="o.employee_prescribed_by_id.name"/>
+                </div>
+
+            </div>
+
+        </xpath>
+
+    </template>
+</odoo>

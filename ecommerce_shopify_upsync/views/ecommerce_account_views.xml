@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit base ecommerce account form to add Push Products button and upsync config -->
+    <record id="ecommerce_account_shopify_upsync_form_view" model="ir.ui.view">
+        <field name="name">ecommerce.account.shopify.upsync.form</field>
+        <field name="model">ecommerce.account</field>
+        <field name="inherit_id" ref="odoo_ecommerce.ecommerce_account_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Add Push Products button after Update Inventory button -->
+            <xpath expr="//button[@name='action_update_inventory']/../.." position="after">
+                <div class="d-flex align-items-center gap-3 mb-2"
+                     invisible="channel_code != 'shopify' or state != 'connected'">
+                    <div style="min-width: 250px;">
+                        <button name="action_push_products" type="object"
+                            string="Push Products"
+                            class="btn-link" icon="fa-upload"/>
+                    </div>
+                    <div class="flex-grow-1 text-muted small">
+                        Push all mapped products from Odoo to Shopify
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3 mb-2"
+                     invisible="channel_code != 'shopify' or state != 'connected'">
+                    <div style="min-width: 250px;">
+                        <button name="%(ecommerce_shopify_upsync.action_shopify_push_product_wizard)d"
+                            type="action"
+                            string="Push New Product"
+                            class="btn-link" icon="fa-plus"/>
+                    </div>
+                    <div class="flex-grow-1 text-muted small">
+                        Create a new offer and push a product to Shopify
+                    </div>
+                </div>
+                <!-- Account-level Metafield Sync buttons -->
+                <div class="d-flex align-items-center gap-3 mb-2"
+                     invisible="channel_code != 'shopify' or state != 'connected'">
+                    <div style="min-width: 250px;">
+                        <button name="action_pull_shopify_metafields" type="object"
+                            string="Pull Shopify Metafields"
+                            class="btn-link" icon="fa-download"/>
+                    </div>
+                    <div class="flex-grow-1 text-muted small">
+                        Pull metafields from every mapped Shopify product into Odoo
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3 mb-2"
+                     invisible="channel_code != 'shopify' or state != 'connected'">
+                    <div style="min-width: 250px;">
+                        <button name="action_push_shopify_metafields" type="object"
+                            string="Push Shopify Metafields"
+                            class="btn-link" icon="fa-upload"/>
+                    </div>
+                    <div class="flex-grow-1 text-muted small">
+                        Push every active Odoo metafield row to Shopify
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3 mb-2"
+                     invisible="channel_code != 'shopify' or state != 'connected'">
+                    <div style="min-width: 250px;">
+                        <button name="action_sync_shopify_metafields" type="object"
+                            string="Sync Metafields (Pull + Push)"
+                            class="btn-link" icon="fa-exchange"/>
+                    </div>
+                    <div class="flex-grow-1 text-muted small">
+                        Pull all metafields from Shopify, then push all Odoo rows back
+                    </div>
+                </div>
+            </xpath>
+
+            <!-- Add upsync configuration fields in Configuration tab -->
+            <xpath expr="//page[@name='configuration']//group[@name='journal']" position="after">
+                <group name="upsync" string="Product Upsync"
+                       invisible="channel_code != 'shopify'">
+                    <field name="shopify_upsync_pricelist_id"/>
+                    <field name="shopify_upsync_compare_pricelist_id"/>
+                    <field name="shopify_upsync_published_scope"/>
+                    <field name="shopify_fulfillment_location_id"
+                           placeholder="numeric Location ID, e.g. 123456789 (leave empty for default fulfillment)"/>
+                    <field name="shopify_weight_unit"/>
+                    <field name="company_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                </group>
+                <group name="webhook" string="Webhook"
+                       invisible="channel_code != 'shopify'">
+                    <div class="d-flex align-items-center gap-3">
+                        <button name="action_register_webhook"
+                            type="object"
+                            string="Register Webhook"
+                            class="btn btn-primary"/>
+                    </div>
+                </group>
+            </xpath>
+
+            <!-- Publish to Channels: fetch + select any sales channel or market catalog -->
+            <xpath expr="//page[@name='configuration']" position="after">
+                <page name="shopify_sales_channels" string="Shopify Sales Channels"
+                      invisible="channel_code != 'shopify'">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <button name="action_fetch_shopify_sales_channels" type="object"
+                                string="Fetch Sales Channels" class="btn-secondary"
+                                invisible="state != 'connected'"/>
+                        <div class="text-muted small">
+                            Fetch every sales channel / market catalog this app can see, then check
+                            "Publish Here" on the ones to use. Only applied when "Default Published
+                            Scope" above is set to "Custom (Selected Channels)".
+                        </div>
+                    </div>
+                    <field name="shopify_sales_channel_ids">
+                        <list editable="bottom">
+                            <field name="name" readonly="1"/>
+                            <field name="shopify_publication_id" readonly="1"/>
+                            <field name="is_publish_target"/>
+                        </list>
+                    </field>
+                </page>
+                <!-- Shopify Product Metafield Definitions -->
+                <page name="shopify_metafield_definitions" string="Metafield Definitions"
+                      invisible="channel_code != 'shopify'">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <button name="action_fetch_shopify_metafield_definitions" type="object"
+                                string="Fetch Product Metafield Definitions" class="btn-secondary"
+                                invisible="state != 'connected'"/>
+                        <div class="text-muted small">
+                            Fetch the Shopify store's PRODUCT metafield definitions (ownerType=PRODUCT)
+                            via the `metafieldDefinitions` GraphQL query. These definitions are
+                            needed when creating a new metafield to ensure the Shopify store
+                            already accepts that namespace/key/type, and they appear here after
+                            fetching so you can review the full list.
+                        </div>
+                    </div>
+                    <field name="metafield_definition_ids">
+                        <list>
+                            <field name="shopify_definition_id" readonly="1"/>
+                            <field name="namespace" readonly="1"/>
+                            <field name="key" readonly="1"/>
+                            <field name="type" readonly="1"/>
+                            <field name="name" readonly="1"/>
+                            <field name="description" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

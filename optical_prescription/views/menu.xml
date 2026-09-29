@@ -1,0 +1,90 @@
+<odoo>
+    <data>
+        <!-- Optometrist Employee Action -->
+        <record id="hr_employee_action_optometrist" model="ir.actions.act_window">
+            <field name="name">Optometrists</field>
+            <field name="res_model">hr.employee</field>
+            <field name="domain">[('is_optometrist', '=', True)]</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="context">
+                {
+                'default_is_optometrist': True
+                }
+            </field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a new Optometrist
+                </p>
+                <p>
+                    Manage all optometrists and their related information.
+                </p>
+            </field>
+        </record>
+
+        <!-- SPH and CYL Action -->
+        <record id="product_sph_cyl" model="ir.actions.act_window">
+            <field name="name">SPH &amp; CYL</field>
+            <field name="res_model">sph.cyl</field>
+            <field name="view_mode">list,form</field>
+            <!--    <field name="view_id" ref="sph_cyl_list"/>-->
+        </record>
+
+        <!-- ADD Power Action -->
+        <record id="product_add_power" model="ir.actions.act_window">
+            <field name="name">ADD</field>
+            <field name="res_model">power.add</field>
+            <field name="view_mode">list,form</field>
+            <!--    <field name="view_id" ref="power_add_list"/>-->
+        </record>
+
+        <!-- Fitting Type Action -->
+        <record id="action_fitting_type" model="ir.actions.act_window">
+            <field name="name">Fitting Types</field>
+            <field name="res_model">fitting.type</field>
+            <field name="view_mode">list,form</field>
+            <!--    <field name="view_id" ref="fitting_type_list"/>-->
+        </record>
+
+        <!-- Main Optometrist Menu -->
+        <menuitem id="menu_account_optometrist"
+                  name="Opticals"
+                  web_icon="optical_prescription,static/icons/optometry.png" sequence="13"/>
+
+
+        <!-- Optometrist Employee Menu -->
+        <menuitem id="menu_optometrist_employees"
+                  name="Optometrists"
+                  parent="menu_account_optometrist"
+                  action="hr_employee_action_optometrist"
+                  sequence="1"/>
+
+        <!-- Configuration Parent Menu -->
+        <menuitem id="optical_menu_id"
+                  name="Configuration"
+                  parent="menu_account_optometrist"
+                  sequence="10"/>
+
+        <!-- Configuration Child Menus -->
+        <menuitem id="sph_cyl_menu"
+                  name="SPH &amp; CYL"
+                  parent="optical_menu_id"
+                  action="product_sph_cyl"
+                  sequence="1"/>
+
+        <menuitem id="power_add_menu"
+                  name="ADD"
+                  parent="optical_menu_id"
+                  action="product_add_power"
+                  sequence="2"/>
+
+        <menuitem id="fitting_type_menu"
+                  name="Fitting Type"
+                  parent="optical_menu_id"
+                  action="action_fitting_type"
+                  sequence="3"/>
+        <menuitem id="mrp.menu_mrp_root" name="Lab" groups="mrp.group_mrp_user,mrp.group_mrp_manager"
+                  web_icon="optical_prescription,static/icons/laboratory.png" sequence="13"/>
+
+
+    </data>
+</odoo>

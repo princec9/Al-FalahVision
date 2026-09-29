@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- INTER-COMPANY TRANSFER USER GROUP                    -->
+    <!-- ===================================================== -->
+
+    <record id="group_intercompany_transfer_user" model="res.groups">
+        <field name="name">Inter-Company Transfer User</field>
+    </record>
+
+
+    <!-- ===================================================== -->
+    <!-- INTER-COMPANY TRANSFER ADMIN GROUP                   -->
+    <!-- ===================================================== -->
+
+    <record id="group_intercompany_transfer_admin" model="res.groups">
+        <field name="name">Inter-Company Transfer Admin</field>
+        <field name="implied_ids"
+               eval="[(4, ref('group_intercompany_transfer_user'))]"/>
+    </record>
+
+</odoo>

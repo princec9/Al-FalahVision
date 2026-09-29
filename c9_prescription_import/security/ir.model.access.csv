@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_c9_prescription_user,c9.prescription user,model_c9_prescription,base.group_user,1,1,1,0
+access_c9_prescription_manager,c9.prescription manager,model_c9_prescription,base.group_system,1,1,1,1
+access_c9_prescription_import_user,c9.prescription.import user,model_c9_prescription_import,base.group_user,1,1,0,0
+access_c9_prescription_import_manager,c9.prescription.import manager,model_c9_prescription_import,base.group_system,1,1,1,1
+access_c9_prescription_import_wizard_user,c9.prescription.import.wizard user,model_c9_prescription_import_wizard,base.group_user,1,1,1,1
+access_c9_customer_mapping_wizard_user,c9.customer.mapping.wizard user,model_c9_customer_mapping_wizard,base.group_user,1,1,1,1
+access_res_partner_c9,res.partner c9 extension,model_res_partner,base.group_user,1,1,0,0

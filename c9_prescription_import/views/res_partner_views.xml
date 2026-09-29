@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         res.partner  —  add Customer ID + Prescriptions smart button
+         Targets the standard contact form (base.view_partner_form).
+         If your database uses a heavily customized partner form that
+         does not contain a vat field / oe_button_box div, adjust the
+         xpath expressions below accordingly.
+    ============================================================ -->
+    <record id="view_partner_form_c9_prescription" model="ir.ui.view">
+        <field name="name">res.partner.form.c9.prescription</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <div class="oe_button_box" name="button_box" position="inside">
+                <button name="action_view_c9_prescriptions"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-eye"
+                        invisible="c9_prescription_count == 0">
+                    <field name="c9_prescription_count" widget="statinfo" string="Prescriptions"/>
+                </button>
+            </div>
+
+            <field name="vat" position="after">
+                <field name="c9_customer_id"/>
+            </field>
+
+        </field>
+    </record>
+
+</odoo>

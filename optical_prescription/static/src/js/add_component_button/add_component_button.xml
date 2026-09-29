@@ -1,0 +1,11 @@
+<templates xml:space="preserve">
+    <t t-name="optical_prescription.AddComponentButton">
+        <button type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill"
+                t-if="isVisible"
+                t-att-disabled="state.loading"
+                t-on-click.stop="onClick">
+            <i class="fa-circle-o-notch-fa-spin"/> Component
+        </button>
+    </t>
+</templates>

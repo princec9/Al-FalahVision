@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="res_config_settings_view_form_product_barcode" model="ir.ui.view">
+        <field name="name">res.config.settings.form.inherit.product.barcode</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//form" position="inside">
+
+                <app string="Product Barcode"
+                     name="product_barcode"
+                     >
+
+                    <block title="Product Barcode Generator">
+
+                        <setting string="Barcode Prefix"
+                                 help="Prefix added before the generated barcode sequence.">
+                            <field name="barcode_prefix"/>
+                        </setting>
+
+                        <setting string="Barcode Padding"
+                                 help="Number of digits used for the sequence, for example 6 gives 000001.">
+                            <field name="barcode_padding"/>
+                        </setting>
+
+                        <setting string="Barcode Suffix"
+                                 help="Suffix added after the generated barcode sequence.">
+                            <field name="barcode_suffix"/>
+                        </setting>
+
+                        <setting string="Barcode Sequence"
+                                 help="Sequence used to generate product barcodes.">
+                            <field name="barcode_sequence_id"/>
+                        </setting>
+
+                    </block>
+
+                </app>
+
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

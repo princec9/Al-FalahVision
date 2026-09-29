@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_discount_approval_wizard" model="ir.ui.view">
+        <field name="name">sale.discount.approval.wizard.form</field>
+        <field name="model">sale.discount.approval.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Discount Approval">
+
+                <div class="alert alert-warning" role="alert">
+                    The discount on this line exceeds the salesperson's
+                    allowed limit. An authorised employee must approve the
+                    additional percentage. The approver may revise the
+                    discount before approving it.
+                </div>
+
+                <div class="alert alert-danger" role="alert"
+                     invisible="not over_limit or not approving_employee_id">
+                    The discount entered is above what this approver may
+                    authorise. Lower it to
+                    <field name="max_allowed_discount" class="oe_inline"
+                           nolabel="1" readonly="1"/>% or choose an approver
+                    with a higher limit.
+                </div>
+
+                <group>
+<!--                    <group string="Request">-->
+<!--                        <field name="order_id" invisible="1"/>-->
+<!--                        <field name="sale_line_id"-->
+<!--                               options="{'no_open': True}"/>-->
+<!--                        <field name="salesperson_id"-->
+<!--                               options="{'no_open': True}"/>-->
+<!--                        <field name="salesperson_limit"/>-->
+<!--                        <field name="current_discount"/>-->
+<!--                        <field name="additional_required"-->
+<!--                               class="text-danger fw-bold"/>-->
+<!--                    </group>-->
+
+<!--                    <group string="Approval">-->
+                        <field name="approving_employee_id"
+                               options="{'no_create': True}"/>
+                        <field name="approver_limit"/>
+<!--                        <field name="max_allowed_discount"-->
+<!--                               invisible="not approving_employee_id"/>-->
+                        <field name="approved_discount"
+                               class="fw-bold"
+                               decoration-danger="over_limit"/>
+                        <field name="over_limit" invisible="1"/>
+                        <field name="discount_secret_key"
+                               password="True"/>
+<!--                    </group>-->
+                </group>
+
+                <footer>
+                    <button name="action_approve_discount"
+                            string="Approve"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            special="cancel"
+                            class="btn-secondary"/>
+                </footer>
+
+            </form>
+        </field>
+    </record>
+
+</odoo>

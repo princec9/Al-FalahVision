@@ -1,0 +1,596 @@
+<odoo>
+    <data>
+<!-- <record id="view_stock_fefo_scan_wizard_form" model="ir.ui.view">-->
+<!--        <field name="name">stock.fefo.scan.wizard.form</field>-->
+<!--        <field name="model">stock.fefo.scan.wizard</field>-->
+<!--        <field name="arch" type="xml">-->
+
+<!--            <form string="FEFO Verification">-->
+
+<!--                <group>-->
+
+<!--                    <field name="picking_id"-->
+<!--                           invisible="1"/>-->
+
+<!--                    <field name="product_id"-->
+<!--                           readonly="1"/>-->
+
+<!--                    <field name="product_barcode"-->
+<!--                           readonly="1"/>-->
+
+<!--                    <field name="lot_barcode"-->
+<!--                           placeholder="Scan Lot Barcode"-->
+<!--                           autofocus="autofocus"/>-->
+
+<!--                    <field name="expected_lot_id"-->
+<!--                           invisible="1"/>-->
+
+<!--                </group>-->
+
+<!--                <footer>-->
+
+<!--                    <button name="action_verify"-->
+<!--                            string="Verify &amp; Validate"-->
+<!--                            type="object"-->
+<!--                            class="btn-primary"/>-->
+
+<!--                    <button string="Cancel"-->
+<!--                            special="cancel"-->
+<!--                            class="btn-secondary"/>-->
+
+<!--                </footer>-->
+
+<!--            </form>-->
+
+<!--        </field>-->
+<!--    </record>-->
+
+
+        <record id="sale_commission_plan_view_form_inherit" model="ir.ui.view">
+    <field name="name">sale.commission.plan.form.inherit</field>
+    <field name="model">sale.commission.plan</field>
+    <field name="inherit_id" ref="sale_commission.sale_commission_plan_view_form"/>
+    <field name="arch" type="xml">
+
+        <!-- Add after User Type -->
+        <xpath expr="//field[@name='user_type']" position="after">
+            <field name="commission_based_on"
+                   readonly="state != 'draft'"
+                   invisible="user_type != 'person'"/>
+        </xpath>
+    </field>
+</record>
+
+<record id="view_delivery_scan_wizard_form" model="ir.ui.view">
+    <field name="name">delivery.scan.wizard.form</field>
+    <field name="model">delivery.scan.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Scan Delivery">
+            <sheet>
+                <div class="text-center">
+                    <h2>
+                        <i class="fa fa-barcode"/> Lot Verification
+                    </h2>
+                    <div class="text-muted">
+                        Delivery: <field name="picking_id"/>
+                    </div>
+                </div>
+
+                <!-- ✅ PROGRESS INDICATOR -->
+                <div class="alert alert-info text-center mt-3">
+                    <h4>
+                        <span style="font-size: 24px;">
+                            <field name="scanned_count"/>
+                            /
+                            <field name="total_count"/>
+                        </span>
+                    </h4>
+                    <p>Lots Scanned</p>
+                </div>
+
+                <!-- ✅ STATUS MESSAGE - SCANNING IN PROGRESS -->
+<!--                <div class="alert alert-warning text-center mt-2">-->
+<!--                    <h4>Scanning in progress...</h4>-->
+<!--                    <p>Scan all <field name="total_count"/> lots to complete</p>-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; ✅ STATUS MESSAGE - ALL SCANNED (shown via compute field) &ndash;&gt;-->
+<!--                <div class="alert alert-success text-center mt-2">-->
+<!--                    <h4>✅ All lots scanned!</h4>-->
+<!--                    <p>You can now confirm the scan.</p>-->
+<!--                </div>-->
+
+                <!-- ✅ SCAN INPUT -->
+                <div class="alert alert-info text-center mt-3">
+                    <h4>
+                        <i class="fa fa-barcode"/>
+                        Scan Serial Number
+                    </h4>
+                    <field name="scan_barcode"
+                           placeholder="Scan barcode here..."
+                           class="text-center"
+                           autofocus="autofocus"/>
+                    <button name="action_scan"
+                            type="object"
+                            string="Scan"
+                            class="btn-primary mt-2"
+                            icon="fa-barcode"/>
+                </div>
+
+                <!-- ✅ LOTS TABLE -->
+                <separator string="Lots to Scan"/>
+
+                <field name="scan_line_ids"
+                       nolabel="1">
+                    <list create="0"
+                          delete="0"
+                          editable="bottom">
+                        <field name="product_id"
+                               string="Product"/>
+                        <field name="barcode"
+                               string="Lot/Serial"/>
+                        <field name="expiration_date"
+                               widget="date"
+                               string="Expiration Date"/>
+                        <field name="scanned"
+                               widget="boolean"
+                               string="✓ Scanned"/>
+                    </list>
+                </field>
+
+                <!-- ✅ INSTRUCTIONS -->
+                <div class="alert alert-info mt-3">
+                    <strong>Instructions:</strong>
+                    <ul>
+                        <li>Scan each lot/serial number in the list above</li>
+                        <li>You can scan in any order</li>
+                        <li>Progress shows: X/Y lots scanned</li>
+                        <li><strong>Confirm button is only enabled when ALL lots are scanned</strong></li>
+                    </ul>
+                </div>
+            </sheet>
+            <footer>
+                <!-- ✅ BUTTON DISABLED UNTIL ALL SCANNED -->
+                <button name="action_confirm"
+                        type="object"
+                        string="Confirm Scan"
+                        class="btn-primary"/>
+                <button string="Cancel"
+                        special="cancel"
+                        class="btn-secondary"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+
+        <record id="view_picking_form_qc_inherit" model="ir.ui.view">
+    <field name="name">stock.picking.form.qc.inherit</field>
+    <field name="model">stock.picking</field>
+    <field name="inherit_id" ref="stock.view_picking_form"/>
+    <field name="arch" type="xml">
+
+        <xpath expr="//header" position="inside">
+<!--<button name="action_quality_checks"-->
+<!--        type="object"-->
+<!--        string="Scan"-->
+<!--        class="btn-success"-->
+<!--        icon="fa-barcode"-->
+<!--        invisible="picking_type_code != 'outgoing' or state not in ['assigned', 'confirmed'] or scan_completed"/>-->
+
+           <button
+                name="action_quality_checks"
+                type="object"
+                string="Scan"
+                class="btn-success"
+                icon="fa-barcode"
+                invisible="picking_type_code != 'outgoing' or state not in ['assigned', 'confirmed'] or scan_completed or not has_lot_lines"/>
+
+            <button name="action_open_qc_wizard"
+                    type="object"
+                    string="Quality"
+                    class="btn-primary"
+                    invisible="picking_type_code != 'incoming' or state != 'done' or qc_done"/>
+
+        </xpath>
+
+        <xpath expr="//sheet" position="inside">
+            <widget name="web_ribbon"
+                    title="Quality Checked"
+                    bg_color="text-bg-success"
+                    invisible="not qc_done"/>
+        </xpath>
+
+    </field>
+</record>
+<record id="view_stock_picking_qc_wizard_form" model="ir.ui.view">
+    <field name="name">stock.picking.qc.wizard.form</field>
+    <field name="model">stock.picking.qc.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Quality Check">
+            <group>
+                <field name="employee_id"/>
+                <field name="description"/>
+            </group>
+
+            <footer>
+                <button name="action_confirm"
+                        string="Confirm"
+                        type="object"
+                        class="btn-primary"/>
+
+                <button string="Cancel"
+                        special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+       <!-- 
+        <record id="sale_order_tree_hide_user_id" model="ir.ui.view">
+            <field name="name">sale.order.tree.hide.user.id</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.sale_order_tree"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//field[@name='user_id']" position="replace"/>
+
+            </field>
+        </record> -->
+        <record id="view_sale_order_form_inherit_additional_details" model="ir.ui.view">
+            <field name="name">view.sale.order.form.inherit.additional.details</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+ <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+
+            <!-- 1. Editable list subview (the one users actually type in) -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']"
+                   position="attributes">
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">0</attribute>
+            </xpath>
+
+            <!-- 2. Popup form subview (opened on mobile / 'expand line') -->
+            <xpath expr="//field[@name='order_line']/form/group/group/field[@name='price_unit']"
+                   position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
+            <!-- 3. Kanban subview (mobile) -->
+            <xpath expr="//field[@name='order_line']/kanban//field[@name='price_unit']"
+                   position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+
+   <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="attributes">
+            <attribute name="readonly">1</attribute>
+            <attribute name="force_save">1</attribute>
+        </xpath>
+                <xpath expr="//div[@name='button_box']" position="inside">
+<!--                    <button name="action_view_quality_checks"-->
+<!--                            type="object"-->
+<!--                            class="oe_stat_button"-->
+<!--                            icon="fa-check-square-o"-->
+<!--                            invisible="1">-->
+<!--                        <field name="quality_check_count" widget="statinfo" string="Quality Checks" invisible="1"/>-->
+<!--                    </button>-->
+
+                    <button name="action_view_manufacturing_orders"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-cogs"
+                            invisible="production_count == 0">
+                        <field name="production_count" widget="statinfo" string="Lab Orders"/>
+                    </button>
+
+                    <field name="prescription_ids" invisible="1"/>
+                    <button name="action_open_prescription"
+                            invisible="prescription_count == 0"
+                            type="object"
+                            class="oe_stat_button">
+                        <field name="prescription_count" widget="statinfo" string="Prescriptions"/>
+                    </button>
+                </xpath>
+
+                <header position="inside">
+                    <!--                    <button name="action_assign_to_lab"-->
+                    <!--                            string="Assign to Lab"-->
+                    <!--                            type="object"-->
+                    <!--                            class="btn btn-primary"-->
+                    <!--                            invisible="state != 'draft'"/>-->
+                    <field name="prescription_id" invisible="1"/>
+                    <button name="action_add_prescription" string="Add Prescription"
+                            type="object" class="btn btn-primary"
+                            invisible="prescription_id"/>
+                    <button name="action_add_prescription" string="Prescription"
+                            type="object" class="btn btn-secondary"
+                            invisible="not prescription_id"/>
+                </header>
+            </field>
+        </record>
+
+        <!--        <record id="view_order_form_inherit_line_lab_order" model="ir.ui.view">-->
+        <!--            <field name="name">sale.order.form.line.lab.order</field>-->
+        <!--            <field name="model">sale.order</field>-->
+        <!--            <field name="inherit_id" ref="sale.view_order_form"/>-->
+        <!--            <field name="arch" type="xml">-->
+        <!--                <xpath expr="//field[@name='order_line']/list//field[@name='product_id']" position="before">-->
+        <!--                    <field name="is_lab_order" invisible="parent_line_id != False"/>-->
+        <!--                    <field name="is_store_order" />-->
+        <!--                    <field name="parent_line_id" column_invisible="True"/>-->
+
+        <!--                </xpath>-->
+
+        <!--                <xpath expr="//field[@name='order_line']/list//field[@name='discount']" position="before">-->
+        <!--                    <field name="salesperson_id" string="Salesperson" optional="show"/>-->
+        <!--                    <field name="discount_amount" string="Disc. Amount" optional="show"/>-->
+        <!--                </xpath>-->
+
+        <!--                <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="after">-->
+
+
+        <!--                    <button name="action_add_dynamic_component"-->
+        <!--                            type="object"-->
+        <!--                            string="Add Component"-->
+        <!--                            icon="fa-plus"-->
+        <!--                            invisible="not is_lab_order or parent_line_id != False"/>-->
+
+        <!--&lt;!&ndash;                    <field name="workcenter_id"&ndash;&gt;-->
+        <!--&lt;!&ndash;                           invisible="not is_lab_order or parent_line_id != False"&ndash;&gt;-->
+        <!--&lt;!&ndash;                           required="is_lab_order and parent_line_id == False"/>&ndash;&gt;-->
+        <!--                </xpath>-->
+
+        <!--&lt;!&ndash;                <xpath expr="//field[@name='order_line']/list//field[@name='name']" position="attributes">&ndash;&gt;-->
+        <!--&lt;!&ndash;                    <attribute name="decoration-bf">is_lab_order</attribute>&ndash;&gt;-->
+        <!--&lt;!&ndash;                </xpath>&ndash;&gt;-->
+        <!--            </field>-->
+        <!--        </record>-->
+
+
+        <record id="view_order_form_inherit_line_lab_order" model="ir.ui.view">
+            <field name="name">sale.order.form.line.lab.order</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+<!--                <xpath expr="//field[@name='user_id']" position="attributes">-->
+<!--                    <attribute name="invisible">1</attribute>-->
+<!--                </xpath>-->
+                <xpath expr="//field[@name='payment_term_id']" position="after">
+
+                    <label for="commitment_date" string="Delivery Date"/>
+
+                    <div class="o_row">
+                        <field name="commitment_date"
+                               readonly="state == 'cancel' or locked"/>
+
+                        <span invisible="not expected_date" class="text-muted">
+                            Expected:
+                            <!--                    <field name="expected_date" class="oe_inline"/>-->
+                        </span>
+                    </div>
+                    <field name="technician_id" invisible="1"/>
+                    <field name="technician_contact_id"/>
+
+                </xpath>
+                <xpath expr="//field[@name='order_line']/list//field[@name='product_id']" position="before">
+                    <!--                    <field name="is_lab_order" invisible="parent_line_id != False"/>-->
+                    <!--                    <field name="is_store_order" column_invisible="True"/>-->
+                    <field name="parent_line_id" column_invisible="True"/>
+
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="before">
+                    <widget name="add_component_button"
+                            invisible="parent_line_id != False"/>
+                    <widget name="fitting_parameters_button"
+                            invisible="parent_line_id != False"/>
+                    <field name="user_id" string="Salesperson"
+                           readonly="discount_locked"
+                           invisible="is_lab_order and not parent_line_id"/>
+                </xpath>
+        <xpath expr="//field[@name='order_line']//list//field[@name='discount']" position="replace"/>
+                <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="after">
+
+                    <field name="discount_approval_required" invisible="1" column_invisible="1"/>
+                    <field name="discount_approved_percentage" invisible="1" column_invisible="1"/>
+                    <field name="discount_locked" invisible="1" column_invisible="1"/>
+                    <field name="discount_approved_by_id"
+                           string="Disc. Approved By"
+                           optional="hide"
+                           readonly="1"/>
+                    <field name="discount_approved_date"
+                           string="Disc. Approval Date"
+                           optional="hide"
+                           readonly="1"/>
+<!-- 
+                    <button name="action_open_discount_approval_wizard"
+                            type="object"
+                            string=" Approval"
+                            icon="fa-unlock-alt"
+                            class="btn-link text-danger"
+                            invisible="not discount_approval_required"/> -->
+
+                    <button name="action_unlock_discount_approval"
+                            type="object"
+                            title="Discount approved - line locked. Unlock (Sales Manager only)."
+                            icon="fa-lock"
+                            class="btn-link text-warning"
+                            groups="sales_team.group_sale_manager"
+                            invisible="not discount_locked"/>
+
+                    <field name="discount_amount"
+                           readonly="discount_locked"/>
+                    <field name="discount"
+                           readonly="discount_locked"/>
+                    <button name="action_open_discount_approval_wizard"
+                            type="object"
+                            string="Approval"
+                            icon="fa-unlock-alt"
+                            class="btn-link text-danger"
+                            invisible="not discount_approval_required"/>
+
+
+                </xpath>
+                <!--                 <xpath expr="//field[@name='order_line']/list//field[@name='price_subtotal']" position="after">-->
+
+                <!-- <widget name="fitting_parameters_button"-->
+                <!--                            invisible="parent_line_id != False" />                </xpath>-->
+            </field>
+        </record>
+<record id="quality_check_view_form_inherit_employee" model="ir.ui.view">
+    <field name="name">quality.check.form.inherit.employee</field>
+    <field name="model">quality.check</field>
+    <field name="inherit_id" ref="quality_control.quality_check_view_form"/>
+    <field name="arch" type="xml">
+
+        <!-- Add a new page after Notes -->
+       <xpath expr="//field[@name='additional_note']" position="after">
+            <field name="assigned_employee_id"/>
+        </xpath>
+
+    </field>
+</record>
+
+        <record id="quality_check_view_form_inherit_failure_message"
+                model="ir.ui.view">
+
+            <field name="name">quality.check.wizard.failure.reason</field>
+
+            <field name="model">quality.check.wizard</field>
+
+            <field name="inherit_id"
+                   ref="quality_control.view_quality_check_wizard"/>
+
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='note']"
+                       position="attributes">
+
+                    <attribute name="readonly">0</attribute>
+
+                </xpath>
+                <xpath expr="//field[@name='additional_note']" position="after">
+
+                    <group col="1" class="mt-3">
+
+                        <field name="assigned_employee_id"
+                               string="Conducted Person"/>
+
+                        <field name="failure_reason"
+                               string="Failure Reason"
+                               placeholder="Enter failure reason..."
+                               invisible="test_type != 'passfail'"/>
+
+                        <field name="failure_action"
+                               string="Failure Action"
+                               placeholder="Enter next action..."
+                               invisible="test_type != 'passfail'"/>
+
+                    </group>
+
+
+                </xpath>
+            </field>
+
+        </record>
+
+
+        <record id="view_move_form_inherit_discount_amount"
+                model="ir.ui.view">
+
+            <field name="name">
+                account.move.form.discount.amount
+            </field>
+
+            <field name="model">account.move</field>
+
+            <field name="inherit_id"
+                   ref="account.view_move_form"/>
+
+            <field name="arch"
+                   type="xml">
+                <xpath expr="//field[@name='invoice_line_ids']/list//field[@name='discount']"
+                       position="before">
+                    <field name="user_id" string="Salesperson" optional="show"/>
+
+
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/list//field[@name='discount']"
+                       position="after">
+
+                    <field name="discount_amount"
+                           string="Disc. Amount"
+                           optional="hide"/>
+
+                </xpath>
+
+            </field>
+
+        </record>
+
+        <template id="report_saleorder_document_discount_amount"
+                  inherit_id="sale.report_saleorder_document">
+
+            <xpath expr="//th[@name='th_discount']"
+                   position="after">
+
+                <th name="th_discount_amount"
+                    t-if="display_discount"
+                    class="text-end">
+                    <span>Disc. Amount</span>
+                </th>
+
+            </xpath>
+
+            <xpath expr="//td[@name='td_product_discount']"
+                   position="after">
+
+                <td name="td_discount_amount"
+                    t-if="display_discount"
+                    class="text-end">
+
+                    <t t-if="not collapse_prices">
+                        <span t-field="line.discount_amount"
+                              t-options="{
+                          'widget': 'monetary',
+                          'display_currency': line.currency_id
+                      }"/>
+                    </t>
+
+                </td>
+
+            </xpath>
+        </template>
+        <!-- <template id="report_invoice_document_discount_amount"-->
+        <!--              inherit_id="account.report_invoice_document">-->
+
+        <!--        <xpath expr="//th[@name='th_discount']"-->
+        <!--               position="after">-->
+
+        <!--            <th name="th_discount_amount"-->
+        <!--                class="text-end">-->
+        <!--                Disc. Amount-->
+        <!--            </th>-->
+
+        <!--        </xpath>-->
+
+        <!--        <xpath expr="//td[@name='td_discount']"-->
+        <!--               position="after">-->
+
+        <!--            <td name="td_discount_amount"-->
+        <!--                class="text-end">-->
+
+        <!--                <span t-field="line.discount_amount"-->
+        <!--                      t-options="{-->
+        <!--                          'widget': 'monetary',-->
+        <!--                          'display_currency': o.currency_id-->
+        <!--                      }"/>-->
+
+        <!--            </td>-->
+
+        <!--        </xpath>-->
+
+        <!--    </template>-->
+    </data>
+</odoo>

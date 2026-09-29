@@ -1,0 +1,20 @@
+<odoo>
+    <!-- Module Category -->
+    <record id="module_category_warranty" model="ir.module.category">
+        <field name="name">Product Warranty</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- Warranty User Group -->
+    <record id="group_warranty_user" model="res.groups">
+        <field name="name">Warranty User</field>
+        <field name="comment">Group for product warranty users</field>
+    </record>
+
+    <!-- Warranty Manager Group -->
+    <record id="group_warranty_manager" model="res.groups">
+        <field name="name">Warranty Manager</field>
+        <field name="comment">Group for product warranty managers</field>
+        <field name="implied_ids" eval="[(4, ref('group_warranty_user'))]"/>
+    </record>
+</odoo>

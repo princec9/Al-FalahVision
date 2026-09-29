@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Option Linked To: expose the linked-metafield namespace/key on the
+         attribute form, so it can be set once and reused across every product
+         that uses this attribute as a Shopify option. -->
+    <record id="product_attribute_view_form_shopify_upsync" model="ir.ui.view">
+        <field name="name">product.attribute.form.shopify.upsync</field>
+        <field name="model">product.attribute</field>
+        <field name="inherit_id" ref="product.product_attribute_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='main_fields']" position="after">
+                <group string="Shopify Option Linked To">
+                    <field name="shopify_linked_metafield_namespace" placeholder="e.g. shopify"/>
+                    <field name="shopify_linked_metafield_key" placeholder="e.g. color-pattern"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

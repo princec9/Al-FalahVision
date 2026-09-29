@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_commission_plan_view_form_inherit_bt" model="ir.ui.view">
+        <field name="name">sale.commission.plan.view.form.inherit.bt.sale.commission</field>
+        <field name="model">sale.commission.plan</field>
+        <field name="inherit_id" ref="sale_commission.sale_commission_plan_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- 1. Hide the misaligned copy added by optical_prescription. -->
+            <xpath expr="//field[@name='commission_based_on']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- 2. Re-add it as a properly labelled, direct <group> field. -->
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="commission_based_on"
+                       string="Attribution Level"
+                       readonly="state != 'draft'"
+                       invisible="user_type != 'person'"/>
+            </xpath>
+
+            <xpath expr="//notebook[@name='main_book']" position="inside">
+                <page string="Line Commission Formula"
+                      invisible="commission_based_on != 'sale_order_line'">
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1"><strong>How to write this formula</strong></p>
+                        <p class="mb-1">
+                            Runs once per report row. You must set two variables:
+                            <code>result</code> (a number) and <code>result_type</code>
+                            (<code>'percentage'</code> or <code>'amount'</code>).
+                        </p>
+                        <p class="mb-1">
+                            Final commission = <code>total_sold * (result / 100)</code>
+                            if percentage, otherwise <code>result</code> directly.
+                        </p>
+                        <p class="mb-1">
+                            Available variables: <code>plan</code>, <code>user</code>,
+                            <code>total_sold</code>, <code>achieved</code>,
+                            <code>total_sold_qty</code>, <code>target</code>,
+                            <code>date_from</code>, <code>date_to</code>,
+                            <code>currency</code>, <code>company</code>,
+                            <code>row</code>, <code>env</code>.
+                        </p>
+                        <p class="mb-0">
+                            Example — flat 5%: <code>result = 5</code> and
+                            <code>result_type = 'percentage'</code>.
+                        </p>
+                    </div>
+                    <field name="commission_python_compute"
+                           widget="code"
+                           options="{'mode': 'python'}"/>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

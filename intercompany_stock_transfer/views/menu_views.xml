@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================== -->
+    <!-- ACTIONS                                               -->
+    <!-- ===================================================== -->
+
+    <record id="action_intercompany_stock_transfers"
+            model="ir.actions.act_window">
+        <field name="name">Inter-Company Transfers</field>
+        <field name="res_model">intercompany.stock.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_intercompany_stock_transfer_list"/>
+        <field name="search_view_id" ref="view_intercompany_stock_transfer_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_intercompany_stock_transfer_settings"
+            model="ir.actions.act_window">
+        <field name="name">Inter-Company Transfer Configuration</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'module': 'intercompany_stock_transfer'}</field>
+    </record>
+
+
+    <!-- ===================================================== -->
+    <!-- MENUS                                                  -->
+    <!-- ===================================================== -->
+
+    <!-- Main Menu -->
+    <menuitem id="menu_intercompany_stock_transfer_root"
+              name="Inter-Company Transfers"
+              parent="stock.menu_stock_root"
+              sequence="65"
+              groups="intercompany_stock_transfer.group_intercompany_transfer_user"/>
+
+    <!-- Transfers -->
+    <menuitem id="menu_intercompany_stock_transfer_transfers"
+              name="Transfers"
+              parent="menu_intercompany_stock_transfer_root"
+              action="action_intercompany_stock_transfers"
+              sequence="10"
+              groups="intercompany_stock_transfer.group_intercompany_transfer_user"/>
+
+
+</odoo>

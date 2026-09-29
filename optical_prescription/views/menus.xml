@@ -1,0 +1,83 @@
+<odoo>
+    <data>
+
+        <!-- Views -->
+        <record id="sph_cyl_tree" model="ir.ui.view">
+            <field name="name">SPH.CYL</field>
+            <field name="model">sph.cyl</field>
+            <field name="arch" type="xml">
+                <list string="Powers" editable="bottom">
+                    <field name="name" string="Power" required="1"/>
+                    <field name="power" column_invisible="1"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="power_add_tree" model="ir.ui.view">
+            <field name="name">ADD</field>
+            <field name="model">power.add</field>
+            <field name="arch" type="xml">
+                <list string="Powers" editable="top">
+                    <field name="name" string="Power" required="1"/>
+                    <field name="power" column_invisible="1"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="fitting_type_tree" model="ir.ui.view">
+            <field name="name">Fitting Type</field>
+            <field name="model">fitting.type</field>
+            <field name="arch" type="xml">
+                <list string="Fitting Type" editable="top">
+                    <field name="name" string="Label" required="1"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Actions -->
+        <record id="product_sph_cyl" model="ir.actions.act_window">
+            <field name="name">SPH &amp; CYL</field>
+            <field name="res_model">sph.cyl</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="sph_cyl_tree"/>
+        </record>
+
+        <record id="product_add_power" model="ir.actions.act_window">
+            <field name="name">ADD</field>
+            <field name="res_model">power.add</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="power_add_tree"/>
+        </record>
+
+        <record id="action_fitting_type" model="ir.actions.act_window">
+            <field name="name">Fitting Types</field>
+            <field name="res_model">fitting.type</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="fitting_type_tree"/>
+        </record>
+
+        <menuitem id="optical_menu_id"
+                  name="Opticals Configuration"
+                  parent="stock.menu_stock_config_settings"
+                  sequence="100"/>
+
+        <menuitem id="sph_cyl_menu"
+                  name="SPH &amp; CYL"
+                  parent="optical_menu_id"
+                  action="product_sph_cyl"
+                  sequence="3"/>
+
+        <menuitem id="power_add_menu"
+                  name="ADD"
+                  parent="optical_menu_id"
+                  action="product_add_power"
+                  sequence="4"/>
+
+        <menuitem id="fitting_type_menu"
+                  name="Fitting Type"
+                  parent="optical_menu_id"
+                  action="action_fitting_type"
+                  sequence="5"/>
+
+    </data>
+</odoo>

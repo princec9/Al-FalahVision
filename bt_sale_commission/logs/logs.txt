@@ -1,0 +1,2 @@
+V1.0.0 By Basil Khan AH
+    1. A commission plan set to "Sale Order Line" attribution replace Odoo's native flat-rate/target-rate commission calculation with a per-row Python formula, and attributes achievement to each line's own salesperson instead of the order header.

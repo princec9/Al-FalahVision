@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_shopify_push_product_wizard,shopify.push.product.wizard access,model_shopify_push_product_wizard,,1,1,1,1
+access_shopify_product_metafield,shopify.product.metafield access,model_shopify_product_metafield,,1,1,1,1
+access_shopify_metafield_definition,shopify.metafield.definition access,model_shopify_metafield_definition,,1,1,1,1
+access_shopify_sales_channel,shopify.sales.channel access,model_shopify_sales_channel,,1,1,1,1
+access_shopify_market_price,shopify.market.price access,model_shopify_market_price,,1,1,1,1

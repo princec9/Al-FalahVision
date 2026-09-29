@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add Shopify Images tab to product.template form -->
+    <record id="product_template_shopify_images_form_view" model="ir.ui.view">
+        <field name="name">product.template.shopify.images.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- One-click re-push of just this product (see product.template.action_push_to_shopify) -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object"
+                        name="action_push_to_shopify" icon="fa-upload">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Push to Shopify</span>
+                    </div>
+                </button>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page name="shopify_images" string="Shopify Images">
+                    <div class="text-muted mb-3">
+                        Images imported from this product's Shopify listing, plus any extra ones
+                        you add here — pushed to Shopify alongside the main product image, in
+                        order (main image first, then these in sequence order).
+                        Alt text set here is sent to Shopify as the image's Alt Text.
+                    </div>
+                    <field name="shopify_image_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="image" widget="image"
+                                   options="{'size': [64, 64]}" readonly="0"/>
+                            <field name="name" placeholder="Alt text (optional)"/>
+                            <field name="shopify_media_id" readonly="1"/>
+                        </list>
+                        <form>
+                            <group>
+                                <field name="sequence"/>
+                                <field name="image" widget="image"/>
+                                <field name="name" placeholder="Alt text (optional)"/>
+                                <field name="shopify_media_id" readonly="1"/>
+                            </group>
+                        </form>
+                    </field>
+                </page>
+
+                <!-- Handle / Category / SEO / Gift Card / Tax Code -->
+                <page name="shopify_settings" string="Shopify Settings">
+                    <group>
+                        <group string="Product Identity">
+                            <field name="shopify_handle" readonly="1"/>
+                            <field name="shopify_product_type" placeholder="e.g. Shirts, Accessories"/>
+                            <field name="shopify_collection_id" readonly="1"/>
+                            <field name="shopify_category_id" readonly="1"/>
+                            <field name="is_gift_card"/>
+                        </group>
+                        <group string="SEO">
+                            <field name="shopify_seo_title"/>
+                            <field name="shopify_seo_description"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Tax">
+                            <field name="shopify_tax_code" placeholder="e.g. PC040100"/>
+                        </group>
+                    </group>
+                </page>
+
+                <!-- Generic Shopify Metafields framework -->
+                <page name="shopify_metafields" string="Shopify Metafields">
+                    <!-- Per-product Pull / Push / Sync buttons -->
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <button name="action_pull_shopify_metafields" type="object"
+                                string="Pull Shopify Metafields" class="btn-secondary"
+                                icon="fa-download"/>
+                        <button name="action_push_shopify_metafields" type="object"
+                                string="Push Shopify Metafields" class="btn-secondary"
+                                icon="fa-upload"/>
+                        <button name="action_sync_shopify_metafields" type="object"
+                                string="Sync Metafields (Pull + Push)" class="btn-primary"
+                                icon="fa-exchange"/>
+                        <button name="action_refresh_metafield_definitions" type="object"
+                                string="Refresh Definitions" class="btn-link"
+                                icon="fa-refresh"/>
+                    </div>
+                    <field name="shopify_metafield_ids">
+                        <list editable="bottom">
+                            <field name="definition_id" options="{'no_create': True}" optional="show"/>
+                            <field name="name" optional="show"/>
+                            <field name="namespace"/>
+                            <field name="key"/>
+                            <field name="type"/>
+                            <field name="value"/>
+                            <field name="shopify_metafield_id" readonly="1"/>
+                            <field name="last_sync_status"
+                                   decoration-success="last_sync_status == 'success'"
+                                   decoration-danger="last_sync_status in ('error', 'failed')"
+                                   widget="badge" readonly="1"/>
+                            <field name="last_sync_direction" readonly="1"/>
+                            <field name="last_sync_date" readonly="1" optional="hide"/>
+                            <field name="last_sync_error"
+                                   column_invisible="last_sync_status not in ('error', 'failed')"
+                                   readonly="1" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

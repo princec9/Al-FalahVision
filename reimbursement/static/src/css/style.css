@@ -1,0 +1,10 @@
+
+.is_reimbursement_ribbon div{
+   height: 219px;
+   width: 101px;
+}
+.is_reimbursement_ribbon div span{
+font-size: 11px;
+background-color: pink !important;
+color: black !important;
+}

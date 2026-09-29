@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ===================== -->
+    <!-- SPH / CYL Powers      -->
+    <!-- ===================== -->
+
+    <record id="sph_plus_025" model="sph.cyl">
+        <field name="name">0.25</field>
+    </record>
+
+    <record id="sph_minus_075" model="sph.cyl">
+        <field name="name">-0.75</field>
+    </record>
+
+    <record id="sph_minus_350" model="sph.cyl">
+        <field name="name">-3.50</field>
+    </record>
+
+    <record id="sph_minus_150" model="sph.cyl">
+        <field name="name">-1.50</field>
+    </record>
+
+    <!-- ===================== -->
+    <!-- ADD Powers            -->
+    <!-- ===================== -->
+
+    <record id="add_plus_200" model="power.add">
+        <field name="name">2.00</field>
+    </record>
+
+    <record id="add_plus_150" model="power.add">
+        <field name="name">1.50</field>
+    </record>
+
+    <!-- ===================== -->
+    <!-- Fitting Types         -->
+    <!-- ===================== -->
+
+    <record id="fitting_single" model="fitting.type">
+        <field name="name">Single Vision</field>
+    </record>
+
+    <record id="fitting_bifocal" model="fitting.type">
+        <field name="name">Bifocal</field>
+    </record>
+
+
+</odoo>

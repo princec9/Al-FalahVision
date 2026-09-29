@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product Template form - Warranty Details tab -->
+    <record id="warranty_product_template_form_view" model="ir.ui.view">
+        <field name="name">warranty.product.template.form.view</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page string="Warranty Details" name="warranty_details_tmpl">
+                    <group>
+                        <group string="Warranty Settings">
+                            <field name="under_warranty"/>
+                            <field name="warranty_period" invisible="not under_warranty"/>
+                            <field name="create_warranty_from_sale" invisible="not under_warranty"/>
+                        </group>
+<!--                        <group string="Renewal Settings" invisible="not under_warranty">-->
+<!--                            <field name="allow_renewal"/>-->
+<!--                            <field name="allow_warranty_renewal_times" invisible="not allow_renewal"/>-->
+<!--                            <field name="warranty_renewal_period" invisible="not allow_renewal"/>-->
+<!--                            <field name="warranty_renewal_cost" invisible="not allow_renewal"/>-->
+<!--                        </group>-->
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

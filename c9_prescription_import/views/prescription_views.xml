@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         c9.prescription  —  List View
+    ============================================================ -->
+    <record id="view_c9_prescription_list" model="ir.ui.view">
+        <field name="name">c9.prescription.list</field>
+        <field name="model">c9.prescription</field>
+        <field name="arch" type="xml">
+            <list string="Prescriptions" default_order="mdate desc"
+                  decoration-muted="mapping_status == 'unmatched'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="customer_id_raw"/>
+                <field name="mapping_status" widget="badge"
+                       decoration-success="mapping_status == 'matched'"
+                       decoration-warning="mapping_status == 'unmatched'"/>
+                <field name="docno"/>
+                <field name="doctype"/>
+                <field name="wh"/>
+                <field name="mdate"/>
+                <field name="sale_order_id"/>
+                <field name="import_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================================================
+         c9.prescription  —  Form View
+    ============================================================ -->
+    <record id="view_c9_prescription_form" model="ir.ui.view">
+        <field name="name">c9.prescription.form</field>
+        <field name="model">c9.prescription</field>
+        <field name="arch" type="xml">
+            <form string="Prescription">
+                <sheet>
+                    <widget name="web_ribbon" title="Unmatched" bg_color="text-bg-warning"
+                            invisible="mapping_status != 'unmatched'"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Customer">
+                            <field name="partner_id"
+                                   placeholder="No matching customer found"/>
+                            <field name="customer_id_raw"/>
+                            <field name="mapping_status" widget="badge"
+                                   decoration-success="mapping_status == 'matched'"
+                                   decoration-warning="mapping_status == 'unmatched'"/>
+                        </group>
+                        <group string="Document">
+                            <field name="mdate"/>
+                            <field name="doctype"/>
+                            <field name="docno"/>
+                            <field name="wh"/>
+                            <field name="sale_order_id"/>
+                            <field name="import_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Right Eye">
+                            <group>
+                                <group>
+                                    <field name="rsph"/>
+                                    <field name="rcyl"/>
+                                    <field name="raxis"/>
+                                    <field name="radd"/>
+                                    <field name="ripd"/>
+                                    <field name="rprism"/>
+                                    <field name="mrprism"/>
+                                    <field name="rnct"/>
+                                    <field name="rva"/>
+                                    <field name="rhgt"/>
+                                    <field name="reyeradius"/>
+                                    <field name="rclradius"/>
+                                    <field name="rbase"/>
+                                    <field name="pdheightr"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Left Eye">
+                            <group>
+                                <group>
+                                    <field name="lsph"/>
+                                    <field name="lcyl"/>
+                                    <field name="laxis"/>
+                                    <field name="ladd"/>
+                                    <field name="lipd"/>
+                                    <field name="lprism"/>
+                                    <field name="mlprism"/>
+                                    <field name="lnct"/>
+                                    <field name="lva"/>
+                                    <field name="lhgt"/>
+                                    <field name="leyeradius"/>
+                                    <field name="lclradius"/>
+                                    <field name="lbase"/>
+                                    <field name="pdheightl"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Frame &amp; Lens">
+                            <group>
+                                <group>
+                                    <field name="shape"/>
+                                    <field name="frametype"/>
+                                    <field name="lenght"/>
+                                    <field name="height"/>
+                                    <field name="npd"/>
+                                    <field name="thicknesstype"/>
+                                    <field name="thickness"/>
+                                    <field name="segmentheight"/>
+                                    <field name="colourdef"/>
+                                </group>
+                                <group>
+                                    <field name="msync"/>
+                                    <field name="ocularmovment"/>
+                                    <field name="optlicenseno"/>
+                                    <field name="revision"/>
+                                    <field name="levision"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Other">
+                            <group>
+                                <field name="motherspec" widget="text"/>
+                                <field name="mreason" widget="text"/>
+                                <field name="mdate_raw" readonly="1"
+                                       invisible="not mdate_raw"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================
+         c9.prescription  —  Search View
+    ============================================================ -->
+    <record id="view_c9_prescription_search" model="ir.ui.view">
+        <field name="name">c9.prescription.search</field>
+        <field name="model">c9.prescription</field>
+        <field name="arch" type="xml">
+            <search string="Search Prescriptions">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="customer_id_raw"/>
+                <field name="docno"/>
+                <filter string="Matched" name="matched" domain="[('mapping_status', '=', 'matched')]"/>
+                <filter string="Unmatched" name="unmatched" domain="[('mapping_status', '=', 'unmatched')]"/>
+                <filter string="Today" name="today" domain="[('mdate', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <group>
+                    <filter string="Customer" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Mapping Status" name="group_status" context="{'group_by': 'mapping_status'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'mdate'}"/>
+                    <filter string="Import Batch" name="group_import" context="{'group_by': 'import_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+</odoo>

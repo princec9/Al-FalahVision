@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inherit Offer Form View to add Shopify upsync fields -->
+    <record id="ecommerce_offer_shopify_upsync_form_view" model="ir.ui.view">
+        <field name="name">ecommerce.offer.shopify.upsync.form</field>
+        <field name="model">ecommerce.offer</field>
+        <field name="inherit_id" ref="odoo_ecommerce.ecommerce_offer_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//notebook" position="inside">
+                <page name="shopify_upsync" string="Shopify Upsync"
+                      invisible="channel_code != 'shopify'">
+                    <group>
+                        <group string="Inventory">
+                            <!-- Variant Inventory Tracker: 'shopify'/'none', kept in
+                                 sync with shopify_inventory_management (see model). -->
+                            <field name="shopify_inventory_tracker"/>
+                            <field name="shopify_inventory_policy"/>
+                            <field name="shopify_taxable"/>
+                            <field name="shopify_compare_at_price"/>
+                        </group>
+                        <group string="Push Status">
+                            <field name="shopify_push_status"/>
+                            <field name="shopify_last_pushed"/>
+                            <field name="shopify_push_error"
+                                   invisible="shopify_push_status != 'error'"/>
+                        </group>
+                    </group>
+                </page>
+
+                <!-- Shopify Markets: per-market inclusion + fixed pricing -->
+                <page name="shopify_markets" string="Shopify Markets"
+                      invisible="channel_code != 'shopify'">
+                    <div class="text-muted mb-3">
+                        Configure per-market inclusion and fixed pricing. Market Catalog/Price
+                        List IDs are found in Shopify Admin under Settings &gt; Markets.
+                    </div>
+                    <field name="shopify_market_price_ids">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="included"/>
+                            <field name="market_catalog_publication_id"/>
+                            <field name="market_price_list_id"/>
+                            <field name="currency_code"/>
+                            <field name="price"/>
+                            <field name="compare_at_price"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Inherit Offer List View to add push status column -->
+    <record id="ecommerce_offer_shopify_upsync_list_view" model="ir.ui.view">
+        <field name="name">ecommerce.offer.shopify.upsync.list</field>
+        <field name="model">ecommerce.offer</field>
+        <field name="inherit_id" ref="odoo_ecommerce.ecommerce_offer_list"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//list" position="inside">
+                <field name="shopify_push_status"
+                       invisible="channel_code != 'shopify'"
+                       widget="badge"
+                       decoration-success="shopify_push_status == 'pushed'"
+                       decoration-warning="shopify_push_status == 'pending'"
+                       decoration-danger="shopify_push_status == 'error'"/>
+                <field name="shopify_last_pushed"
+                       invisible="channel_code != 'shopify'"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

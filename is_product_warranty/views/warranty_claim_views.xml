@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_warranty_claim_list" model="ir.ui.view">
+        <field name="name">warranty.claim.list</field>
+        <field name="model">warranty.claim</field>
+        <field name="arch" type="xml">
+            <!-- Claim list -->
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="claim_date"/>
+                <field name="deadline"/>
+                <field name="responsible_id"/>
+                <field name="team_id"/>
+                <!-- State badge -->
+                <field name="state" widget="badge" decoration-info="state == 'new'" decoration-warning="state == 'maintenance'" decoration-primary="state == 'ready'" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_warranty_claim_search" model="ir.ui.view">
+        <field name="name">warranty.claim.search</field>
+        <field name="model">warranty.claim</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Claim Subject"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="product_id" string="Product"/>
+<!--                <field name="serial_number" string="Serial No"/>-->
+                <field name="responsible_id" string="Responsible"/>
+                <field name="team_id" string="Warranty Team"/>
+                <filter string="New" name="filter_new" domain="[('state','=','new')]"/>
+                <filter string="Under Maintenance" name="filter_maintenance" domain="[('state','=','maintenance')]"/>
+                <filter string="Ready to Deliver" name="filter_ready" domain="[('state','=','ready')]"/>
+                <filter string="Done" name="filter_done" domain="[('state','=','done')]"/>
+                <filter string="High Priority" name="filter_priority" domain="[('priority','=','3')]"/>
+                <filter string="Claim Date" name="filter_claim_date" date="claim_date"/>
+                <filter string="Deadline" name="filter_deadline" date="deadline"/>
+                <filter string="Status" name="group_state" context="{'group_by':'state'}"/>
+                <filter string="Warranty Team" name="group_team" context="{'group_by':'team_id'}"/>
+                <filter string="Responsible" name="group_responsible" context="{'group_by':'responsible_id'}"/>
+                <filter string="Product" name="group_product" context="{'group_by':'product_id'}"/>
+                <filter string="Customer" name="group_partner" context="{'group_by':'partner_id'}"/>
+                <filter string="Category" name="group_category" context="{'group_by':'category_id'}"/>
+                <filter string="Priority" name="group_priority" context="{'group_by':'priority'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_warranty_claim_form" model="ir.ui.view">
+        <field name="name">warranty.claim.form</field>
+        <field name="model">warranty.claim</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <!-- Header buttons -->
+                    <button name="action_submit_claim" string="Submit" type="object" class="btn-primary" invisible="state != 'new'"/>
+                    <button name="action_mark_ready" string="Ready to Deliver" type="object" class="btn-primary" invisible="state != 'maintenance'"/>
+                    <button name="action_mark_done" string="Done" type="object" class="btn-primary" invisible="state != 'ready'"/>
+                    <!-- Statusbar -->
+                    <field name="state" widget="statusbar" statusbar_visible="new,maintenance,ready,done"/>
+                </header>
+                <sheet>
+                    <!-- Title -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <!-- Claim info -->
+                        <group>
+                            <field name="warranty_id" required="1"/>
+                            <field name="claim_date"/>
+                            <field name="responsible_id"/>
+                            <field name="priority" widget="priority"/>
+                        </group>
+                        <!-- Team info -->
+                        <group>
+                            <field name="team_id"/>
+                            <field name="deadline" required="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Reporter -->
+                    <group string="Claim Reporter">
+                        <field name="partner_id"/>
+                        <field name="phone"/>
+                        <field name="email"/>
+                        <field name="product_id"/>
+<!--                        <field name="serial_number"/>-->
+                    </group>
+                    <!-- Responsibilities -->
+                    <group string="Responsibilities">
+                        <field name="trouble_responsible"/>
+                        <field name="category_id"/>
+                    </group>
+                    <!-- Root cause -->
+                    <separator string="Root Causes"/>
+                    <field name="root_cause" nolabel="1" rows="5"/>
+                    <!-- Description -->
+                    <separator string="Claim/Action Description"/>
+                    <field name="description" nolabel="1" required="1" rows="5"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Kanban View -->
+    <record id="view_warranty_claim_kanban" model="ir.ui.view">
+        <field name="name">warranty.claim.kanban</field>
+        <field name="model">warranty.claim</field>
+        <field name="arch" type="xml">
+            <!-- Kanban grouped by stage -->
+            <kanban default_group_by="partner_id" default_order="priority desc, claim_date asc">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="claim_date"/>
+                <field name="priority"/>
+                <field name="state"/>
+                <field name="stage_id"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_card oe_kanban_global_click p-2">
+                            <div class="d-flex justify-content-between">
+                                <strong>
+                                    <field name="name"/>
+                                </strong>
+                                <field name="priority" widget="priority"/>
+                            </div>
+                            <div>
+                                <field name="partner_id"/>
+                            </div>
+                            <div>
+                                <field name="product_id"/>
+                            </div>
+                            <div class="text-muted">
+                                <field name="claim_date"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_warranty_claim" model="ir.actions.act_window">
+        <field name="name">Warranty Claims</field>
+        <field name="res_model">warranty.claim</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_warranty_claim_search"/>
+    </record>
+</odoo>

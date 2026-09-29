@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ecommerce_default_adjustment" model="product.product">
+        <field name="name">E-commerce Adjustment</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok">False</field>
+        <field name="purchase_ok">False</field>
+    </record>
+    <record id="ecommerce_default_discount" model="product.product">
+        <field name="name">E-commerce Discount</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok">True</field>
+        <field name="purchase_ok">False</field>
+    </record>
+    <record id="ecommerce_default_product" model="product.product">
+        <field name="name">E-commerce Sale</field>
+        <field name="type">consu</field>
+        <field name="list_price">0.0</field>
+        <field name="weight">1.0</field>
+        <field name="volume">1.0</field>
+        <field name="sale_ok">True</field>
+        <field name="purchase_ok">False</field>
+    </record>
+    <record id="ecommerce_default_shipping" model="product.product">
+        <field name="name">E-commerce Shipping</field>
+        <field name="type">service</field>
+        <field name="list_price">0.0</field>
+        <field name="sale_ok">False</field>
+        <field name="purchase_ok">False</field>
+    </record>
+
+    <function model="product.product" name="_configure_for_ecommerce">
+        <value eval="[
+            ref('odoo_ecommerce.ecommerce_default_adjustment'),
+            ref('odoo_ecommerce.ecommerce_default_discount'),
+            ref('odoo_ecommerce.ecommerce_default_product'),
+            ref('odoo_ecommerce.ecommerce_default_shipping')
+        ]"/>
+    </function>
+
+    <record id="base.group_user" model="res.groups">
+        <field name="implied_ids" eval="[
+            (4, ref('sale.group_discount_per_so_line')),
+            (4, ref('stock.group_stock_multi_locations'))
+        ]"/>
+    </record>
+    <!-- Keep multi-locations enabled and mirror stock settings behavior at install time:
+        deactivate restrictive inherited views that set create="false" on stock.location. -->
+    <function model="ir.ui.view" name="write">
+        <value eval="[ref('stock.stock_location_view_tree2_editable')]"/>
+        <value eval="{'active': False}"/>
+    </function>
+    <function model="ir.ui.view" name="write">
+        <value eval="[ref('stock.stock_location_view_form_editable')]"/>
+        <value eval="{'active': False}"/>
+    </function>
+</odoo>
