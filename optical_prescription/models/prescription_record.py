@@ -43,9 +43,20 @@ class CommissionMixin(models.Model):
     prescribed_by = fields.Selection(
         selection=[
             ('hospital', 'Hospital'),
-            ('self', 'Self'),
-        ], required=True,
+            ('self', 'Customer Preference'),
+            ('old', 'Old'),
+            ('alfalah', 'AlFalah'),
+        ],
+        # required=True,
         string='Prescribed By',
+    )
+
+    referred_by = fields.Char(
+        string='Referred By',
+    )
+
+    hospital_name = fields.Char(
+        string='Hospital Name',
     )
 
     optometrist_partner_id = fields.Many2one(
@@ -73,15 +84,15 @@ class CommissionMixin(models.Model):
 
     new_rsph = fields.Many2one('sph.cyl')
     new_rcyl = fields.Many2one('sph.cyl')
-    new_raxis = fields.Integer()
+    new_raxis = fields.Char()
     new_radd = fields.Many2one('power.add')
-    new_rpd = fields.Float()
+    new_rpd = fields.Char()
 
     new_lsph = fields.Many2one('sph.cyl')
     new_lcyl = fields.Many2one('sph.cyl')
-    new_laxis = fields.Integer()
+    new_laxis = fields.Char()
     new_ladd = fields.Many2one('power.add')
-    new_lpd = fields.Float()
+    new_lpd = fields.Char()
 
     frame_shape = fields.Char('Shape')
     frame_type = fields.Char('Frame Type')
@@ -107,15 +118,15 @@ class CommissionMixin(models.Model):
     fitting_type_id = fields.Many2one('fitting.type')
     note = fields.Char(string="Note")
 
-    @api.onchange('new_raxis', 'new_laxis')
-    def _check_age_digits(self):
-        """ANAND MC JUL 2 2025- check axis
-        (calculated as degrees so in between 0 to 180)"""
-        for rec in self:
-            if rec.new_raxis and (rec.new_raxis < 0 or rec.new_raxis > 180):
-                raise ValidationError("RE Axis must be a 3-digit number (0–180).")
-            if rec.new_laxis and (rec.new_laxis < 0 or rec.new_laxis > 180):
-                raise ValidationError("LE Axis must be a 3-digit number (0–180).")
+    # @api.onchange('new_raxis', 'new_laxis')
+    # def _check_age_digits(self):
+    #     """ANAND MC JUL 2 2025- check axis
+    #     (calculated as degrees so in between 0 to 180)"""
+    #     for rec in self:
+    #         if rec.new_raxis and (rec.new_raxis < 0 or rec.new_raxis > 180):
+    #             raise ValidationError("RE Axis must be a 3-digit number (0–180).")
+    #         if rec.new_laxis and (rec.new_laxis < 0 or rec.new_laxis > 180):
+    #             raise ValidationError("LE Axis must be a 3-digit number (0–180).")
 
     def update_res_id_line(self):
         record = self.env[self.res_model].search([('id', '=', int(self.line_res_id))])

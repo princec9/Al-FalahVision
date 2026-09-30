@@ -8,7 +8,6 @@
             <field name="arch" type="xml">
                 <list string="Powers" editable="bottom">
                     <field name="name" string="Power" required="1"/>
-                    <field name="power" column_invisible="1"/>
                 </list>
             </field>
         </record>
@@ -19,7 +18,6 @@
             <field name="arch" type="xml">
                 <list string="Powers" editable="top">
                     <field name="name" string="Power" required="1"/>
-                    <field name="power" column_invisible="1"/>
                 </list>
             </field>
         </record>

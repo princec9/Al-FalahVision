@@ -159,7 +159,12 @@
                         <group string="Visit Details">
                             <field name="visit_purpose_note"/>
                             <field name="prescribed_by"/>
-                            <field name="optometrist_partner_id" domain="[('is_optometrist_person', '=', True)]"/>
+                            <field name="referred_by"
+                                invisible="prescribed_by != 'self'"/>
+
+                            <field name="hospital_name"
+                                invisible="prescribed_by != 'hospital'"/>
+                            <!-- <field name="optometrist_partner_id"/> -->
                             <!-- <field name="optometrist_id"  /> -->
                                                 <field name="license_key"/>
 
