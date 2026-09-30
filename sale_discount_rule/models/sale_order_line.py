@@ -11,6 +11,7 @@ class SaleOrderLine(models.Model):
         self.ensure_one()
         if not self.product_id or not self.discount:
             return False
+        # date_order is stored in UTC; convert to the user's timezone before taking the date
         date = self.order_id.date_order and fields.Date.context_today(self, self.order_id.date_order)
         rule = self.env['product.discount.rule']._get_applicable_rule(self.product_id, date)
         if rule and float_compare(self.discount, rule.max_discount, precision_digits=2) > 0:

@@ -9,8 +9,9 @@ class ProductDiscountRule(models.Model):
 
     product_tmpl_id = fields.Many2one('product.template', string='Product', ondelete='cascade', index=True)
     brand_id = fields.Many2one('product.brand', string='Brand', ondelete='cascade', index=True)
-    categ_id = fields.Many2one('product.category', string='Product Category',
-                               help='Brand rules only. Leave empty to apply to all categories of the brand.')
+    categ_id = fields.Many2one('product.category', string='Product Category', ondelete='cascade', index=True,
+                               help='On a brand rule: limits it to this category (empty = all categories).\n'
+                                    'Without brand/product: rule for products that have no brand.')
     min_discount = fields.Float(string='Minimum Discount (%)', digits='Discount')
     max_discount = fields.Float(string='Maximum Discount (%)', digits='Discount', required=True)
     date_start = fields.Date(string='Start Date', required=True, default=fields.Date.context_today)
@@ -26,7 +27,8 @@ class ProductDiscountRule(models.Model):
 
     @api.model
     def _get_applicable_rule(self, product, date):
-        """Active rule on the given date. Priority: product > brand + category > brand."""
+        """Active rule on the given date.
+        Priority: product > brand + category > brand; products without a brand use the category rule."""
         date = date or fields.Date.context_today(self)
         date_domain = [
             ('date_start', '<=', date),
@@ -37,4 +39,10 @@ class ProductDiscountRule(models.Model):
             brand_domain = [('brand_id', '=', product.brand_id.id)] + date_domain
             rule = self.search(brand_domain + [('categ_id', '=', product.categ_id.id)], limit=1) \
                 or self.search(brand_domain + [('categ_id', '=', False)], limit=1)
+        elif not rule:
+            rule = self.search([
+                ('categ_id', '=', product.categ_id.id),
+                ('brand_id', '=', False),
+                ('product_tmpl_id', '=', False),
+            ] + date_domain, limit=1)
         return rule

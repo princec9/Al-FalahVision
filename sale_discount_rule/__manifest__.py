@@ -1,8 +1,8 @@
 {
-    'name': 'Sale Discount Rules (Product / Brand)',
-    'version': '19.0.1.0.0',
+    'name': 'Sale Discount Rules (Product / Brand / Category)',
+    'version': '19.0.1.0.1',
     'category': 'Sales',
-    'summary': 'Min/Max discount rules on Product and Brand with Sales Order warning',
+    'summary': 'Min/Max discount rules on Product, Brand and Category with Sales Order validation',
     'license': 'LGPL-3',
     'depends': ['sale_management', 'product_barcode'],
     'data': [

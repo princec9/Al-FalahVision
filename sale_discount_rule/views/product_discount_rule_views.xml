@@ -50,4 +50,16 @@
         </field>
     </record>
 
+    <record id="product_category_form_discount_rule" model="ir.ui.view">
+        <field name="name">product.category.form.discount.rule</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <separator string="Discount Rules (products without brand)"/>
+                <field name="discount_rule_ids"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
