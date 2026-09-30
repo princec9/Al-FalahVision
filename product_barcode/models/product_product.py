@@ -33,120 +33,57 @@ class ProductProduct(models.Model):
         readonly=True
     )
 
-
     @api.model_create_multi
     def create(self, vals_list):
-        """
-        Override create to automatically generate barcodes for products
-        that don't already have one.
-        """
         products = super().create(vals_list)
 
         for product in products:
-            # Only generate barcode if the product doesn't already have one
             if not product.barcode:
-                generated_barcode,default_code = self._generate_barcode()
+                generated_barcode, default_code = self._generate_barcode()
                 if generated_barcode:
                     product.barcode = generated_barcode
                 if default_code and not product.default_code:
                     product.default_code = default_code
+
         return products
 
     def _generate_barcode(self):
-        """
-        Generate a barcode based on configured prefix, padding, and suffix.
-        
-        Returns:
-            str: Generated barcode, or False if configuration is not available
-        """
-        # Get configuration parameters from settings (company-specific)
+        """Return (barcode, default_code). Returns (False, False) if it cannot be generated."""
         config = self.env['ir.config_parameter'].sudo()
         company = self.env.company
-        
-        # Build parameter keys with company context
-        prefix_key = f'product_barcode.barcode_prefix_{company.id}'
-        padding_key = f'product_barcode.barcode_padding_{company.id}'
-        suffix_key = f'product_barcode.barcode_suffix_{company.id}'
-        sequence_key = f'product_barcode.barcode_sequence_id_{company.id}'
 
-        # Try to get company-specific config, fallback to global
-        prefix = (
-            config.get_param(prefix_key) or 
-            config.get_param('product_barcode.barcode_prefix') or 
-            ''
-        )
-        padding = int(
-            config.get_param(padding_key) or 
-            config.get_param('product_barcode.barcode_padding') or 
-            '6'
-        )
-        suffix = (
-            config.get_param(suffix_key) or 
-            config.get_param('product_barcode.barcode_suffix') or 
-            ''
-        )
-        sequence_id = (
-            config.get_param(sequence_key) or 
-            config.get_param('product_barcode.barcode_sequence_id')
-        )
+        def param(name):
+            return (config.get_param(f'product_barcode.{name}_{company.id}')
+                    or config.get_param(f'product_barcode.{name}'))
 
-        # Get the sequence object
-        if not sequence_id:
-            return False
-
+        prefix = param('barcode_prefix') or ''
+        suffix = param('barcode_suffix') or ''
         try:
-            sequence = self.env['ir.sequence'].browse(int(sequence_id))
-            if not sequence.exists():
-                return False
+            padding = int(param('barcode_padding') or 6)
+            sequence_id = int(param('barcode_sequence_id') or 0)
         except (ValueError, TypeError):
-            return False
+            return False, False
 
-        # Generate the next sequence number
-        max_attempts = 100
-        attempt = 0
-        
-        while attempt < max_attempts:
-            # Get next number from sequence
-            sequence_number = sequence.next_by_id()
-            
-            # Format the sequence number with padding
-            formatted_sequence = str(sequence_number).zfill(padding)
+        if not sequence_id:
+            return False, False
+        sequence = self.env['ir.sequence'].browse(sequence_id)
+        if not sequence.exists():
+            return False, False
 
-            default_code = formatted_sequence
-            # Combine prefix + sequence + suffix
-            generated_barcode = f"{prefix}{formatted_sequence}{suffix}"
-            
-            # Check if barcode already exists
-            existing = self.env['product.product'].search(
-                [('barcode', '=', generated_barcode)],
-                limit=1
-            )
-            
-            if not existing:
-                # Barcode is unique, return it
-                return generated_barcode,default_code
-            
-            # Barcode exists, try again with next sequence
-            attempt += 1
-        
-        # If we've exhausted attempts, return False
-        return False
+        for _attempt in range(100):
+            number = str(sequence.next_by_id()).zfill(padding)
+            barcode = f"{prefix}{number}{suffix}"
+            if not self.env['product.product'].search([('barcode', '=', barcode)], limit=1):
+                return barcode, barcode  # keep your existing default_code rule here if it differs
+        return False, False
 
     @api.model
     def _generate_barcode_background(self, limit=None):
-        """
-        Utility method to generate missing barcodes for existing products.
-        Useful for backfill operations.
-        
-        Args:
-            limit: Maximum number of products to process
-        """
-        domain = [('barcode', '=', False)]
-        products = self.search(domain, limit=limit)
-        
+        products = self.search([('barcode', '=', False)], limit=limit)
         for product in products:
-            barcode = self._generate_barcode()
+            barcode, default_code = self._generate_barcode()
             if barcode:
                 product.barcode = barcode
-        
+                if default_code and not product.default_code:
+                    product.default_code = default_code
         return len(products)
