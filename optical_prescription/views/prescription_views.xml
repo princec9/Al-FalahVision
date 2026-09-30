@@ -274,6 +274,45 @@
                 </form>
             </field>
         </record>
+        <record model="ir.ui.view" id="view_prescription_list1">
+            <field name="model">prescription.records</field>
+            <field name="arch" type="xml">
+                <list>
+                    <field name="create_date"/>
+                    <field name="res_model" column_invisible="1"/>
+                    <field name="line_res_id" string="DOC #"/>
+                    <!--                    <field name="product_tmpl_id"/>-->
+                    <field name="new_rsph" optional="show" string="Right SPH"/>
+                    <field name="new_rcyl" optional="show" string="Right CYL"/>
+                    <field name="new_raxis" optional="hide" string="Right Axis"/>
+                    <field name="new_radd" optional="hide" string="Right ADD"/>
+                    <field name="new_rpd" optional="hide" string="Right IPD"/>
+
+                    <field name="new_lsph" optional="show" string="Left SPH"/>
+                    <field name="new_lcyl" optional="show" string="Left CYL"/>
+                    <field name="new_laxis" optional="hide" string="Left AXIS"/>
+                    <field name="new_ladd" optional="hide" string="Left ADD"/>
+                    <field name="new_lpd" optional="hide" string="Left IPD"/>
+                    <field name="visit_purpose_note" string="Visit Purpose"/>
+                    <field name="prescribed_by"/>
+                    <field name="partner_id"/>
+                    <!-- <field name="optometrist_id"/> -->
+                    <!-- <field name="optometrist_partner_id"/> -->
+                </list>
+            </field>
+        </record>
+         <record id="action_prescription_list1_import" model="ir.actions.act_window">
+            <field name="name">Prescription Import</field>
+            <field name="res_model">prescription.records</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="view_prescription_list1"/>
+        </record>
+         <menuitem id="menu_prescription_import"
+                  name="Prescription Import"
+                  parent="c9_prescription_import.menu_c9_prescriptions_root"
+                  action="action_prescription_list1_import"
+                  sequence="45"/>
+
 
 
     </data>
