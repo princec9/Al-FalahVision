@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_product_discount_rule_list" model="ir.ui.view">
+        <field name="name">product.discount.rule.list</field>
+        <field name="model">product.discount.rule</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="min_discount"/>
+                <field name="max_discount"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="product_template_form_discount_rule" model="ir.ui.view">
+        <field name="name">product.template.form.discount.rule</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Discount Rules" name="discount_rules">
+                    <field name="discount_rule_ids"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_brand_form_discount_rule" model="ir.ui.view">
+        <field name="name">product.brand.form.discount.rule</field>
+        <field name="model">product.brand</field>
+        <field name="inherit_id" ref="product_barcode.view_product_brand_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="Discount Rules" name="discount_rules">
+                        <field name="discount_rule_ids">
+                            <list editable="bottom">
+                                <field name="categ_id"/>
+                                <field name="min_discount"/>
+                                <field name="max_discount"/>
+                                <field name="date_start"/>
+                                <field name="date_end"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
