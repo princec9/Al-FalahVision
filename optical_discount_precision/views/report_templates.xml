@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Quotation / Sales Order PDF -->
+    <template id="report_saleorder_document_discount_display"
+              inherit_id="sale.report_saleorder_document">
+        <xpath expr="//td[@name='td_product_discount']//span[@t-field='line.discount']"
+               position="attributes">
+            <attribute name="t-options">{'widget': 'float', 'precision': 2}</attribute>
+        </xpath>
+    </template>
+
+    <!-- Invoice PDF -->
+    <template id="report_invoice_document_discount_display"
+              inherit_id="account.report_invoice_document">
+        <xpath expr="//td[@name='td_discount']//span[@t-field='line.discount']"
+               position="attributes">
+            <attribute name="t-options">{'widget': 'float', 'precision': 2}</attribute>
+        </xpath>
+    </template>
+
+    <!-- Customer portal / Preview: 6% stays "6", 0.441176 shows "0.44" -->
+    <template id="sale_order_portal_content_discount_display"
+              inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//td[@name='td_product_discount']//strong/t"
+               position="attributes">
+            <attribute name="t-out">((round(line.discount, 2) % 1) and '%.2f' or '%d') % line.discount</attribute>
+        </xpath>
+    </template>
+</odoo>
