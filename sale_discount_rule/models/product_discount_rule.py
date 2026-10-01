@@ -11,7 +11,7 @@ class ProductDiscountRule(models.Model):
     brand_id = fields.Many2one('product.brand', string='Brand', ondelete='cascade', index=True)
     categ_id = fields.Many2one('product.category', string='Product Category', ondelete='cascade', index=True,
                                help='On a brand rule: limits it to this category (empty = all categories).\n'
-                                    'Without brand/product: rule for products that have no brand.')
+                                    'Without brand/product: category rule, used when no brand rule applies.')
     min_discount = fields.Float(string='Minimum Discount (%)', digits='Discount')
     max_discount = fields.Float(string='Maximum Discount (%)', digits='Discount', required=True)
     date_start = fields.Date(string='Start Date', required=True, default=fields.Date.context_today)
@@ -28,21 +28,23 @@ class ProductDiscountRule(models.Model):
     @api.model
     def _get_applicable_rule(self, product, date):
         """Active rule on the given date.
-        Priority: product > brand + category > brand; products without a brand use the category rule."""
+        Priority: 1. Brand (brand + category, then brand only)  2. Category  3. Product."""
         date = date or fields.Date.context_today(self)
         date_domain = [
             ('date_start', '<=', date),
             '|', ('date_end', '=', False), ('date_end', '>=', date),
         ]
-        rule = self.search([('product_tmpl_id', '=', product.product_tmpl_id.id)] + date_domain, limit=1)
-        if not rule and product.brand_id:
+        rule = self.browse()
+        if product.brand_id:
             brand_domain = [('brand_id', '=', product.brand_id.id)] + date_domain
             rule = self.search(brand_domain + [('categ_id', '=', product.categ_id.id)], limit=1) \
                 or self.search(brand_domain + [('categ_id', '=', False)], limit=1)
-        elif not rule:
+        if not rule and product.categ_id:
             rule = self.search([
                 ('categ_id', '=', product.categ_id.id),
                 ('brand_id', '=', False),
                 ('product_tmpl_id', '=', False),
             ] + date_domain, limit=1)
+        if not rule:
+            rule = self.search([('product_tmpl_id', '=', product.product_tmpl_id.id)] + date_domain, limit=1)
         return rule

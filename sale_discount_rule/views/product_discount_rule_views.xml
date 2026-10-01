@@ -56,7 +56,7 @@
         <field name="inherit_id" ref="product.product_category_form_view"/>
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="inside">
-                <separator string="Discount Rules (products without brand)"/>
+                <separator string="Discount Rules"/>
                 <field name="discount_rule_ids"/>
             </xpath>
         </field>
