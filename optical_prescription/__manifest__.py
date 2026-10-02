@@ -63,7 +63,9 @@ This module depends on Optical Prescription Base module.
         "views/prescription_views.xml",
         "views/fitting_parameters_views.xml",
         "views/menu.xml",
-
+        'report/invoice_a5_report.xml',
+        'report/invoice_a5_template.xml',
+        
     ],
     "assets": {
 

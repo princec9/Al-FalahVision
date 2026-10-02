@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <template id="report_invoice_a5_document">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.basic_layout">
+                        <!-- position:relative so the address block can be pinned to the top-right corner of the page.
+                             padding-top leaves the top empty for the address / pre-printed header. -->
+                        <div class="page" style="position:relative; font-size:10px; padding-top:40mm;">
+
+                            <t t-set="partner" t-value="o.partner_id"/>
+                            <t t-set="dob" t-value="partner.dob"/>
+
+                            <!-- Latest prescription linked to this invoice (directly or through its sales order) -->
+                            <t t-set="rx_domain"
+                               t-value="['|', '&amp;', ('res_model', '=', 'account.move'), ('line_res_id', '=', o.id), ('order_id', 'in', o.invoice_line_ids.sale_line_ids.order_id.ids)]"/>
+                            <t t-set="rx" t-value="env['prescription.records'].sudo().search(rx_domain, order='create_date desc', limit=1)"/>
+
+                            <!-- ================= COMPANY ADDRESS (TOP RIGHT) ================= -->
+                            <t t-set="c" t-value="o.company_id.partner_id"/>
+                            <div style="position:absolute; top:8mm; right:4mm; width:75mm; text-align:right; font-size:9px; line-height:1.35;">
+                                <div style="font-size:10px;"><b t-out="o.company_id.name"/></div>
+                                <div t-if="c.street" t-out="c.street"/>
+                                <div t-if="c.street2" t-out="c.street2"/>
+                                <div t-if="c.city or c.state_id">
+                                    <span t-out="', '.join([x for x in [c.city, c.state_id.name] if x])"/>
+                                </div>
+                                <div t-if="c.country_id" t-out="c.country_id.name"/>
+                                <div t-if="o.company_id.vat">TRN: <span t-out="o.company_id.vat"/></div>
+                            </div>
+
+                            <!-- Heading -->
+                            <div style="font-size:18px; margin:0 0 6px 0;">
+                                Simplified Tax Invoice <span t-out="o.name"/>
+                            </div>
+
+                            <!-- Dates / source / reference -->
+                            <table style="width:100%; margin-bottom:8px; border-collapse:collapse;">
+                                <tr>
+                                    <td style="width:25%;"><b>Invoice Date</b></td>
+                                    <td style="width:25%;"><b>Due Date</b></td>
+                                    <td style="width:25%;"><b>Source</b></td>
+                                    <td style="width:25%;"><b>Reference</b></td>
+                                </tr>
+                                <tr>
+                                    <td t-out="o.invoice_date" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
+                                    <td t-out="o.invoice_date_due" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
+                                    <td t-out="o.invoice_origin"/>
+                                    <td t-out="o.ref"/>
+                                </tr>
+                            </table>
+
+                            <!-- ================= CUSTOMER INFORMATION ================= -->
+                            <div style="font-weight:bold; border-bottom:1px solid #000; margin-bottom:3px;">Customer Information</div>
+                            <table style="width:100%; margin-bottom:8px; border-collapse:collapse; table-layout:fixed;">
+                                <colgroup>
+                                    <col style="width:16%;"/>
+                                    <col style="width:34%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:34%;"/>
+                                </colgroup>
+                                <tr>
+                                    <td>Customer Name</td>
+                                    <td><b t-out="partner.name"/></td>
+                                    <td>Mobile Number</td>
+                                    <td t-out="partner.phone"/>
+                                </tr>
+                                <tr>
+                                    <td>Date of Birth</td>
+                                    <td t-out="dob" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
+                                    <td><t t-if="partner.vat">Customer TRN</t></td>
+                                    <td><t t-if="partner.vat" t-out="partner.vat"/></td>
+                                </tr>
+                                <tr>
+                                    <td>Address</td>
+                                    <td colspan="3">
+                                        <span t-out="', '.join([x for x in [partner.street, partner.street2, partner.city, partner.state_id.name, partner.country_id.name] if x])"/>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- ================= PRODUCT INFORMATION ================= -->
+                            <div style="font-weight:bold; border-bottom:1px solid #000; margin-bottom:3px;">Product Information</div>
+                            <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+                                <colgroup>
+                                    <col style="width:50%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:18%;"/>
+                                </colgroup>
+                                <thead>
+                                    <tr style="border-bottom:1px solid #999;">
+                                        <th style="text-align:left; font-weight:normal; padding:3px 0;">Product Details</th>
+                                        <th style="text-align:right; font-weight:normal; padding:3px 0;">Quantity</th>
+                                        <th style="text-align:right; font-weight:normal; padding:3px 0;">Unit Price</th>
+                                        <th style="text-align:right; font-weight:normal; padding:3px 0;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.invoice_line_ids.filtered(lambda l: l.display_type == 'product')" t-as="l">
+                                        <tr>
+                                            <td style="padding:3px 0;" t-out="l.name"/>
+                                            <td style="text-align:right; padding:3px 0;">
+                                                <span t-out="'%.2f' % l.quantity"/>
+                                                <span t-out="l.product_uom_id.name"/>
+                                            </td>
+                                            <td style="text-align:right; padding:3px 0;"
+                                                t-out="'{:,.2f}'.format(l.price_unit)"/>
+                                            <td style="text-align:right; padding:3px 0;"
+                                                t-out="l.price_subtotal"
+                                                t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+
+                            <!-- ================= PRESCRIPTION DETAILS ================= -->
+                            <div style="font-weight:bold; border-bottom:1px solid #000; margin-bottom:3px;">Prescription Details</div>
+                            <table style="width:100%; margin-bottom:8px; border-collapse:collapse; table-layout:fixed; text-align:center;">
+                                <colgroup>
+                                    <col style="width:10%;"/>
+                                    <col style="width:18%;"/>
+                                    <col style="width:18%;"/>
+                                    <col style="width:18%;"/>
+                                    <col style="width:18%;"/>
+                                    <col style="width:18%;"/>
+                                </colgroup>
+                                <thead>
+                                    <tr style="border-bottom:1px solid #999;">
+                                        <th></th>
+                                        <th style="font-weight:normal;">SPH</th>
+                                        <th style="font-weight:normal;">CYL</th>
+                                        <th style="font-weight:normal;">AXIS</th>
+                                        <th style="font-weight:normal;">ADD</th>
+                                        <th style="font-weight:normal;">PD</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="text-align:left;"><b>RE</b></td>
+                                        <td t-out="rx.new_rsph.display_name"/>
+                                        <td t-out="rx.new_rcyl.display_name"/>
+                                        <td t-out="rx.new_raxis"/>
+                                        <td t-out="rx.new_radd.display_name"/>
+                                        <td t-out="rx.new_rpd"/>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align:left;"><b>LE</b></td>
+                                        <td t-out="rx.new_lsph.display_name"/>
+                                        <td t-out="rx.new_lcyl.display_name"/>
+                                        <td t-out="rx.new_laxis"/>
+                                        <td t-out="rx.new_ladd.display_name"/>
+                                        <td t-out="rx.new_lpd"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- ================= FINANCIAL INFORMATION ================= -->
+                            <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:8px;">
+                                <colgroup>
+                                    <col style="width:50%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:16%;"/>
+                                    <col style="width:18%;"/>
+                                </colgroup>
+                                <tr>
+                                    <td colspan="2" style="padding-top:3px;">
+                                        Payment Communication:
+                                        <b t-out="o.payment_reference or o.name"/>
+                                    </td>
+                                    <td style="text-align:right; padding-top:3px; padding-right:20px; border-top:1px solid #000;">
+                                        <b>Invoice Amount</b>
+                                    </td>
+                                    <td style="text-align:right; padding-top:3px; border-top:1px solid #000;"
+                                        t-out="o.amount_total"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"/>
+                                    <td style="text-align:right; padding-right:20px;"><b>Balance Due</b></td>
+                                    <td style="text-align:right;"
+                                        t-out="o.amount_residual"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                </tr>
+                            </table>
+
+                            <!-- ================= ADDITIONAL INFORMATION ================= -->
+                            <div t-if="o.narration" style="margin-top:8px;">
+                                <b>Remarks:</b> <span t-out="o.narration"/>
+                            </div>
+
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+
+    </data>
+</odoo>
