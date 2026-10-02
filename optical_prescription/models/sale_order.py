@@ -110,19 +110,19 @@ class SaleAdvancePaymentInv(models.TransientModel):
                         "done",
                     )
 
-                    if production.state not in allowed_states and wizard.advance_payment_method == 'delivered':
-                        raise UserError(_(
-                            "You cannot create the invoice yet.\n\n"
-                            "Lab Product: %s\n"
-                            "Manufacturing Order: %s\n"
-                            "Manufacturing Order Status: %s\n\n"
-                            "Please confirm the Manufacturing Order before "
-                            "creating the invoice."
-                        ) % (
-                            line.product_id.display_name,
-                            production.name,
-                            production.state,
-                        ))
+                    # if production.state not in allowed_states and wizard.advance_payment_method == 'delivered':
+                    #     raise UserError(_(
+                    #         "You cannot create the invoice yet.\n\n"
+                    #         "Lab Product: %s\n"
+                    #         "Manufacturing Order: %s\n"
+                    #         "Manufacturing Order Status: %s\n\n"
+                    #         "Please confirm the Manufacturing Order before "
+                    #         "creating the invoice."
+                    #     ) % (
+                    #         line.product_id.display_name,
+                    #         production.name,
+                    #         production.state,
+                    #     ))
 
         # Everything is valid -> continue with standard Odoo invoice creation
         return super().create_invoices()
