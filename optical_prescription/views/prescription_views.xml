@@ -164,7 +164,7 @@
 
                             <field name="hospital_name"
                                 invisible="prescribed_by != 'hospital'"/>
-                            <field name="optometrist_partner_id" domain="[('x_optametrist', '=', True)]"/> 
+                            <field name="optometrist_partner_id" domain="[('is_optometrist_person', '=', True)]"/> 
                             <!-- <field name="optometrist_id"  /> -->
                                                 <field name="license_key"/>
 
