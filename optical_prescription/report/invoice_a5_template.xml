@@ -13,10 +13,11 @@
                             <t t-set="partner" t-value="o.partner_id"/>
                             <t t-set="dob" t-value="partner.dob"/>
 
-                            <!-- Latest prescription linked to this invoice (directly or through its sales order) -->
-                            <t t-set="rx_domain"
-                               t-value="['|', '&amp;', ('res_model', '=', 'account.move'), ('line_res_id', '=', o.id), ('order_id', 'in', o.invoice_line_ids.sale_line_ids.order_id.ids)]"/>
-                            <t t-set="rx" t-value="env['prescription.records'].sudo().search(rx_domain, order='create_date desc', limit=1)"/>
+                            
+                            <t t-set="so_ids" t-value="o.invoice_line_ids.sale_line_ids.order_id.ids"/>
+                            <t t-set="rx_so" t-value="env['prescription.records'].sudo().search([('order_id', 'in', so_ids)], order='create_date desc', limit=1)"/>
+                            <t t-set="rx_inv" t-value="env['prescription.records'].sudo().search([('res_model', '=', 'account.move'), ('line_res_id', '=', o.id)], order='create_date desc', limit=1)"/>
+                            <t t-set="rx" t-value="rx_so or rx_inv"/>
 
                             <!-- ================= COMPANY ADDRESS (TOP RIGHT) ================= -->
                             <t t-set="c" t-value="o.company_id.partner_id"/>
@@ -45,10 +46,10 @@
                                     <td style="width:25%;"><b>Reference</b></td>
                                 </tr>
                                 <tr>
-                                    <td t-out="o.invoice_date" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
-                                    <td t-out="o.invoice_date_due" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
-                                    <td t-out="o.invoice_origin"/>
-                                    <td t-out="o.ref"/>
+                                    <td><span t-out="o.invoice_date" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/></td>
+                                    <td><span t-out="o.invoice_date_due" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/></td>
+                                    <td><span t-out="o.invoice_origin"/></td>
+                                    <td><span t-out="o.ref"/></td>
                                 </tr>
                             </table>
 
@@ -65,11 +66,11 @@
                                     <td>Customer Name</td>
                                     <td><b t-out="partner.name"/></td>
                                     <td>Mobile Number</td>
-                                    <td t-out="partner.phone"/>
+                                    <td><span t-out="partner.phone"/></td>
                                 </tr>
                                 <tr>
                                     <td>Date of Birth</td>
-                                    <td t-out="dob" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/>
+                                    <td><span t-out="dob" t-options='{"widget": "date", "format": "MM/dd/yyyy"}'/></td>
                                     <td><t t-if="partner.vat">Customer TRN</t></td>
                                     <td><t t-if="partner.vat" t-out="partner.vat"/></td>
                                 </tr>
@@ -101,23 +102,21 @@
                                 <tbody>
                                     <t t-foreach="o.invoice_line_ids.filtered(lambda l: l.display_type == 'product')" t-as="l">
                                         <tr>
-                                            <td style="padding:3px 0;" t-out="l.name"/>
+                                            <td style="padding:3px 0;"><span t-out="l.name"/></td>
                                             <td style="text-align:right; padding:3px 0;">
                                                 <span t-out="'%.2f' % l.quantity"/>
                                                 <span t-out="l.product_uom_id.name"/>
                                             </td>
-                                            <td style="text-align:right; padding:3px 0;"
-                                                t-out="'{:,.2f}'.format(l.price_unit)"/>
-                                            <td style="text-align:right; padding:3px 0;"
-                                                t-out="l.price_subtotal"
-                                                t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            <td style="text-align:right; padding:3px 0;"><span t-out="'{:,.2f}'.format(l.price_unit)"/></td>
+                                            <td style="text-align:right; padding:3px 0;"><span t-out="l.price_subtotal"
+                                                t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
                                         </tr>
                                     </t>
                                 </tbody>
                             </table>
 
                             <!-- ================= PRESCRIPTION DETAILS ================= -->
-                            <div style="font-weight:bold; border-bottom:1px solid #000; margin-bottom:3px;">Prescription Details</div>
+                            <div style="font-weight:bold; border-bottom:1px solid #000; margin:8px 0 3px 0;">Prescription Details</div>
                             <table style="width:100%; margin-bottom:8px; border-collapse:collapse; table-layout:fixed; text-align:center;">
                                 <colgroup>
                                     <col style="width:10%;"/>
@@ -134,25 +133,25 @@
                                         <th style="font-weight:normal;">CYL</th>
                                         <th style="font-weight:normal;">AXIS</th>
                                         <th style="font-weight:normal;">ADD</th>
-                                        <th style="font-weight:normal;">PD</th>
+                                        <th style="font-weight:normal;">V/A</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td style="text-align:left;"><b>RE</b></td>
-                                        <td t-out="rx.new_rsph.display_name"/>
-                                        <td t-out="rx.new_rcyl.display_name"/>
-                                        <td t-out="rx.new_raxis"/>
-                                        <td t-out="rx.new_radd.display_name"/>
-                                        <td t-out="rx.new_rpd"/>
+                                        <td><span t-out="rx.new_rsph.display_name"/></td>
+                                        <td><span t-out="rx.new_rcyl.display_name"/></td>
+                                        <td><span t-out="rx.new_raxis"/></td>
+                                        <td><span t-out="rx.new_radd.display_name"/></td>
+                                        <td><span t-out="rx.new_rpd"/></td>
                                     </tr>
                                     <tr>
                                         <td style="text-align:left;"><b>LE</b></td>
-                                        <td t-out="rx.new_lsph.display_name"/>
-                                        <td t-out="rx.new_lcyl.display_name"/>
-                                        <td t-out="rx.new_laxis"/>
-                                        <td t-out="rx.new_ladd.display_name"/>
-                                        <td t-out="rx.new_lpd"/>
+                                        <td><span t-out="rx.new_lsph.display_name"/></td>
+                                        <td><span t-out="rx.new_lcyl.display_name"/></td>
+                                        <td><span t-out="rx.new_laxis"/></td>
+                                        <td><span t-out="rx.new_ladd.display_name"/></td>
+                                        <td><span t-out="rx.new_lpd"/></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -173,16 +172,14 @@
                                     <td style="text-align:right; padding-top:3px; padding-right:20px; border-top:1px solid #000;">
                                         <b>Invoice Amount</b>
                                     </td>
-                                    <td style="text-align:right; padding-top:3px; border-top:1px solid #000;"
-                                        t-out="o.amount_total"
-                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    <td style="text-align:right; padding-top:3px; border-top:1px solid #000;"><span t-out="o.amount_total"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
                                 </tr>
                                 <tr>
                                     <td colspan="2"/>
                                     <td style="text-align:right; padding-right:20px;"><b>Balance Due</b></td>
-                                    <td style="text-align:right;"
-                                        t-out="o.amount_residual"
-                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                    <td style="text-align:right;"><span t-out="o.amount_residual"
+                                        t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></td>
                                 </tr>
                             </table>
 
