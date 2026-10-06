@@ -25,10 +25,10 @@
             <field name="binding_model_id" ref="account.model_account_move"/>
             <field name="binding_type">report</field>
         </record>
-    <record id="account.account_invoices" model="ir.actions.report">
+    <!-- <record id="account.account_invoices" model="ir.actions.report">
     <field name="report_name">optical_prescription.report_invoice_a5_document</field>
     <field name="report_file">optical_prescription.report_invoice_a5_document</field>
     <field name="paperformat_id" ref="paperformat_invoice_a5"/>
-</record>
+</record> -->
     </data>
 </odoo>

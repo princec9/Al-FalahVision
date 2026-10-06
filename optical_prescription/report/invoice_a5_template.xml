@@ -34,7 +34,7 @@
 
                             <!-- Heading -->
                             <div style="font-size:18px; margin:0 0 6px 0;">
-                                Simplified Tax Invoice <span t-out="o.name"/>
+                                Tax Invoice <span t-out="o.name"/>
                             </div>
 
                             <!-- Dates / source / reference -->
