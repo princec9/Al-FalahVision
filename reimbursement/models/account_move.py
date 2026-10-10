@@ -8,6 +8,18 @@ from odoo import fields, models, _
 from odoo.exceptions import UserError
 
 
+
+class AccountJournal(models.Model):
+    _inherit = "account.journal"
+
+    is_insurance = fields.Boolean(
+        string="Is Insurance",
+        default=False,
+        copy=True,
+        help="Mark this journal as an insurance payment journal.",
+    )
+
+
 class InvoiceExpenseWizard(models.TransientModel):
     _name = "invoice.expense.wizard"
     _description = "Invoice Expense Wizard"
@@ -526,7 +538,7 @@ class AccountMove(models.Model):
 
         journal = self.env["account.journal"].search([
             ("type", "=", "general"),
-            ("company_id", "=", self.company_id.id),
+            ("is_insurance", "=", True),
         ], limit=1)
 
         if not journal:
