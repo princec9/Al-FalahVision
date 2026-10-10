@@ -26,25 +26,40 @@ class ProductDiscountRule(models.Model):
                 raise ValidationError(_('End Date cannot be before Start Date.'))
 
     @api.model
-    def _get_applicable_rule(self, product, date):
-        """Active rule on the given date.
-        Priority: 1. Brand (brand + category, then brand only)  2. Category  3. Product."""
+    def _get_applicable_rule(self, product, date=None):
         date = date or fields.Date.context_today(self)
+        tmpl = product.product_tmpl_id
         date_domain = [
-            ('date_start', '<=', date),
+            '|', ('date_start', '=', False), ('date_start', '<=', date),
             '|', ('date_end', '=', False), ('date_end', '>=', date),
         ]
-        rule = self.browse()
-        if product.brand_id:
-            brand_domain = [('brand_id', '=', product.brand_id.id)] + date_domain
-            rule = self.search(brand_domain + [('categ_id', '=', product.categ_id.id)], limit=1) \
-                or self.search(brand_domain + [('categ_id', '=', False)], limit=1)
-        if not rule and product.categ_id:
-            rule = self.search([
-                ('categ_id', '=', product.categ_id.id),
-                ('brand_id', '=', False),
+        # product's own category plus all parents
+        categ_ids = [int(i) for i in product.categ_id.parent_path.split('/')[:-1]]
+
+        # 1) Product rule
+        rule = self.search(
+            date_domain + [('product_tmpl_id', '=', tmpl.id)],
+            order='id desc', limit=1)
+        if rule:
+            return rule
+
+        # 2) Brand rule (optionally restricted to a category)
+        if tmpl.brand_id:
+            rules = self.search(date_domain + [
+                ('brand_id', '=', tmpl.brand_id.id),
                 ('product_tmpl_id', '=', False),
-            ] + date_domain, limit=1)
-        if not rule:
-            rule = self.search([('product_tmpl_id', '=', product.product_tmpl_id.id)] + date_domain, limit=1)
-        return rule
+                '|', ('categ_id', '=', False), ('categ_id', 'in', categ_ids),
+            ])
+            if rules:
+                # a category-specific brand rule beats a general brand rule
+                return rules.sorted(lambda r: (bool(r.categ_id), r.id), reverse=True)[0]
+
+        # 3) Category rule (no brand, no product), closest category first
+        rules = self.search(date_domain + [
+            ('brand_id', '=', False),
+            ('product_tmpl_id', '=', False),
+            ('categ_id', 'in', categ_ids),
+        ])
+        if rules:
+            return rules.sorted(lambda r: len(r.categ_id.parent_path), reverse=True)[0]
+        return self.browse()

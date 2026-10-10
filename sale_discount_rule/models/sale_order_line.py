@@ -6,36 +6,74 @@ from odoo.tools import float_compare
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    def _get_exceeded_discount_rule(self):
-        """Return the applicable rule if the line discount exceeds its maximum."""
-        self.ensure_one()
-        if not self.product_id or not self.discount:
-            return False
-        # date_order is stored in UTC; convert to the user's timezone before taking the date
-        date = self.order_id.date_order and fields.Date.context_today(self, self.order_id.date_order)
-        rule = self.env['product.discount.rule']._get_applicable_rule(self.product_id, date)
-        if rule and float_compare(self.discount, rule.max_discount, precision_digits=2) > 0:
-            return rule
-        return False
+    # ------------------------------------------------------------------
+    # No automatic discount: the pricelist discount is only used as a limit
+    # ------------------------------------------------------------------
+    @api.depends('product_id')
+    def _compute_discount(self):
+        for line in self:
+            line.discount = 0.0
 
-    def _discount_limit_message(self, rule):
+    # ------------------------------------------------------------------
+    # Limits: pricelist -> product -> brand -> category
+    # ------------------------------------------------------------------
+    def _get_pricelist_discount(self):
+        """Discount % defined on the pricelist rule matched by this line."""
+        self.ensure_one()
+        item = self.pricelist_item_id
+        if not (self.product_id and self.order_id.pricelist_id and item):
+            return 0.0
+        if item.compute_price == 'percentage':
+            return item.percent_price
+        if item.compute_price == 'formula':
+            return max(item.price_discount, 0.0)
+        return 0.0  # fixed price: no discount percentage
+
+    def _get_discount_limit(self):
+        """Return (limit, source) or (False, False) when nothing limits the line."""
+        self.ensure_one()
+        if not self.product_id or self.display_type:
+            return False, False
+        pricelist_discount = self._get_pricelist_discount()
+        if pricelist_discount > 0:
+            return pricelist_discount, _('pricelist')
+        # date_order is stored in UTC; convert to the user's timezone first
+        date = self.order_id.date_order and fields.Date.context_today(
+            self, self.order_id.date_order)
+        rule = self.env['product.discount.rule']._get_applicable_rule(self.product_id, date)
+        if rule:
+            return rule.max_discount, _('discount rule')
+        return False, False
+
+    def _get_exceeded_discount_limit(self):
+        self.ensure_one()
+        if not self.discount:
+            return False, False
+        limit, source = self._get_discount_limit()
+        if source and float_compare(self.discount, limit, precision_digits=2) > 0:
+            return limit, source
+        return False, False
+
+    def _discount_limit_message(self, limit, source):
         return _(
-            'Discount %(disc).2f%% on "%(product)s" exceeds the maximum allowed %(max).2f%%.',
-            disc=self.discount, product=self.product_id.display_name, max=rule.max_discount,
+            'Discount %(disc).2f%% on "%(product)s" exceeds the maximum allowed %(max).2f%% (%(source)s).',
+            disc=self.discount, product=self.product_id.display_name,
+            max=limit, source=source,
         )
 
     def _reset_exceeded_discounts(self):
         """Reset over-limit discounts to the allowed maximum and return a warning."""
         messages = []
         for line in self:
-            rule = line._get_exceeded_discount_rule()
-            if rule:
-                messages.append(line._discount_limit_message(rule))
-                line.discount = rule.max_discount
+            limit, source = line._get_exceeded_discount_limit()
+            if source:
+                messages.append(line._discount_limit_message(limit, source))
+                line.discount = limit
         if messages:
             return {'warning': {
                 'title': _('Discount Limit Exceeded'),
-                'message': '\n'.join(messages) + '\n' + _('The discount has been reset to the maximum allowed.'),
+                'message': '\n'.join(messages) + '\n' + _(
+                    'The discount has been reset to the maximum allowed.'),
             }}
 
     @api.onchange('product_id', 'discount')
@@ -45,15 +83,15 @@ class SaleOrderLine(models.Model):
     @api.constrains('product_id', 'discount')
     def _check_discount_limit(self):
         for line in self:
-            rule = line._get_exceeded_discount_rule()
-            if rule:
-                raise ValidationError(line._discount_limit_message(rule))
+            limit, source = line._get_exceeded_discount_limit()
+            if source:
+                raise ValidationError(line._discount_limit_message(limit, source))
 
 
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    @api.onchange('date_order')
+    @api.onchange('date_order', 'pricelist_id')
     def _onchange_date_order_discount_limit(self):
         return self.order_line._reset_exceeded_discounts()
 
