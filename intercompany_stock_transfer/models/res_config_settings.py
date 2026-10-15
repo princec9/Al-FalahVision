@@ -1,8 +1,5 @@
-from odoo import fields, models
-
 from odoo import fields, models, api
 from odoo.fields import Domain
-
 
 
 class ResConfigSettings(models.TransientModel):
@@ -20,6 +17,7 @@ class ResConfigSettings(models.TransientModel):
     )
 
 
+
 class ResCompany(models.Model):
     _inherit = "res.company"
 
@@ -29,7 +27,6 @@ class ResCompany(models.Model):
         "UNIQUE(short_code)", "The company short code must be unique."
     )
 
-    # lets users find a company by typing the code or the name in the dropdown
     _rec_names_search = ["name", "short_code"]
 
     @api.model

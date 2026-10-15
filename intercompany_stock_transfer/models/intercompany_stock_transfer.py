@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.float_utils import float_compare, float_is_zero
@@ -101,6 +103,7 @@ class IntercompanyStockTransfer(models.Model):
                     body=body,
                     subtype_xmlid="mail.mt_note",
                 )
+
     name = fields.Char(
         string="Transfer Number",
         required=True,
@@ -144,7 +147,6 @@ class IntercompanyStockTransfer(models.Model):
                 "delete": False},
 
         }
-
 
     source_company_id = fields.Many2one(
         "res.company",
@@ -256,13 +258,7 @@ class IntercompanyStockTransfer(models.Model):
         tracking=True,
     )
 
-    notes = fields.Text(
-        string="Remarks"
-    )
-
-    # ============================================================
-    # PRODUCTS
-    # ============================================================
+    notes = fields.Text(string="Remarks")
 
     line_ids = fields.One2many(
         "intercompany.stock.transfer.line",
@@ -479,7 +475,6 @@ class IntercompanyStockTransfer(models.Model):
 
         return vals
 
-
     # ============================================================
     # CREATE
     # ============================================================
@@ -578,6 +573,7 @@ class IntercompanyStockTransfer(models.Model):
                 )
             else:
                 rec.destination_location_id = False
+
     # ============================================================
     # ONCHANGE - TRANSIT
     # ============================================================
@@ -602,7 +598,6 @@ class IntercompanyStockTransfer(models.Model):
         )
 
         if not value or not value.isdigit():
-
             raise UserError(
                 _(
                     "Configure an Inter-Company Transit Location "
@@ -613,7 +608,6 @@ class IntercompanyStockTransfer(models.Model):
         location = self.env["stock.location"].sudo().browse(int(value))
 
         if not location.exists():
-
             raise UserError(
                 _(
                     "The configured Inter-Company Transit Location "
@@ -622,7 +616,6 @@ class IntercompanyStockTransfer(models.Model):
             )
 
         if location.usage != "transit":
-
             raise UserError(
                 _(
                     "The configured Inter-Company Transit Location "
@@ -631,7 +624,6 @@ class IntercompanyStockTransfer(models.Model):
             )
 
         if location.company_id:
-
             raise UserError(
                 _(
                     "The configured Inter-Company Transit Location "
@@ -705,17 +697,14 @@ class IntercompanyStockTransfer(models.Model):
         configured = self._get_configured_transit()
 
         if self.transit_location_id != configured:
-
             self.transit_location_id = configured
 
         if self.transit_location_id.company_id:
-
             raise ValidationError(
                 _("The transit location must be shared (Company is empty).")
             )
 
         if self.transit_location_id.usage != "transit":
-
             raise ValidationError(
                 _("The transit location must be of type Transit.")
             )
@@ -783,7 +772,6 @@ class IntercompanyStockTransfer(models.Model):
                 not picking_type
                 or picking_type.company_id != self.source_company_id
         ):
-
             raise UserError(
                 _("A source warehouse delivery operation type is required.")
             )
@@ -802,7 +790,6 @@ class IntercompanyStockTransfer(models.Model):
                 not picking_type
                 or picking_type.company_id != self.destination_company_id
         ):
-
             raise UserError(
                 _("A destination warehouse receipt operation type is required.")
             )
@@ -879,7 +866,6 @@ class IntercompanyStockTransfer(models.Model):
                 }
             )
 
-
         picking.action_confirm()
         picking.action_assign()
 
@@ -895,6 +881,12 @@ class IntercompanyStockTransfer(models.Model):
     # ============================================================
 
     def _create_destination_picking(self):
+        """
+        Create the destination receipt in the destination company.
+        Everything runs with sudo() so it works even if the current
+        user has no access to the destination company.
+        """
+        self.ensure_one()
 
         Picking = self.env["stock.picking"].sudo()
         Move = self.env["stock.move"].sudo()
@@ -965,7 +957,6 @@ class IntercompanyStockTransfer(models.Model):
             commands = []
 
             for src_line in src_lines:
-
                 commands.append(
                     (
                         0,
@@ -1034,7 +1025,6 @@ class IntercompanyStockTransfer(models.Model):
         for rec in self.sudo():
 
             if rec.state != "confirmed":
-
                 raise UserError(
                     _("Only confirmed transfers can be sent to transit.")
                 )
@@ -1042,6 +1032,7 @@ class IntercompanyStockTransfer(models.Model):
             picking = rec.source_picking_id
 
             if not picking:
+                raise UserError(_("The source picking is not available."))
 
             if picking.state == "cancel":
                 raise UserError(_("The source picking is cancelled."))
@@ -1051,7 +1042,6 @@ class IntercompanyStockTransfer(models.Model):
                 result = picking.button_validate()
 
                 if isinstance(result, dict):
-
                     raise UserError(
                         _(
                             "Odoo returned a validation wizard "
@@ -1094,7 +1084,6 @@ class IntercompanyStockTransfer(models.Model):
             if move.product_id.tracking == "serial":
 
                 if not move.move_line_ids:
-
                     raise UserError(
                         _(
                             "Assign serial numbers before "
@@ -1115,7 +1104,6 @@ class IntercompanyStockTransfer(models.Model):
         for rec in self.sudo():
 
             if rec.state != "in_transit":
-
                 raise UserError(
                     _("Only transfers in transit can be received.")
                 )
@@ -1123,17 +1111,19 @@ class IntercompanyStockTransfer(models.Model):
             picking = rec.destination_picking_id
 
             if not picking:
-
                 raise UserError(
                     _("The destination picking does not exist.")
                 )
+
+            # sudo + destination company: the user may not have
+            # access to the destination company.
+            picking = picking.sudo().with_company(rec.destination_company_id)
 
             if picking.state != "done":
 
                 result = picking.button_validate()
 
                 if isinstance(result, dict):
-
                     raise UserError(
                         _(
                             "Odoo returned a validation wizard "
@@ -1145,7 +1135,6 @@ class IntercompanyStockTransfer(models.Model):
                     )
 
             if picking.state != "done":
-
                 raise UserError(
                     _(
                         "The destination picking must be "
@@ -1177,7 +1166,6 @@ class IntercompanyStockTransfer(models.Model):
         for rec in self.sudo():
 
             if rec.state == "received":
-
                 raise UserError(
                     _(
                         "A received transfer cannot be cancelled. "
@@ -1186,7 +1174,6 @@ class IntercompanyStockTransfer(models.Model):
                 )
 
             if rec.state == "in_transit":
-
                 raise UserError(
                     _(
                         "Goods are already in transit. "
@@ -1201,7 +1188,6 @@ class IntercompanyStockTransfer(models.Model):
                         rec.source_picking_id
                         and rec.source_picking_id.state not in ("done", "cancel")
                 ):
-
                     rec.source_picking_id.action_cancel()
 
             rec.state = "cancelled"
@@ -1262,4 +1248,3 @@ class IntercompanyStockTransfer(models.Model):
             "view_mode": "form",
             "res_id": picking.id,
         }
-
