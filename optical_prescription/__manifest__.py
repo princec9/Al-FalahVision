@@ -62,6 +62,7 @@ This module depends on Optical Prescription Base module.
         "views/mrp_order_views.xml",
         "views/prescription_views.xml",
         "views/fitting_parameters_views.xml",
+        "views/product_template_views.xml",
         "views/menu.xml",
         'report/invoice_a5_report.xml',
         'report/invoice_a5_template.xml',
@@ -74,6 +75,8 @@ This module depends on Optical Prescription Base module.
             "optical_prescription/static/src/js/add_component_button/add_component_button.xml",
             "optical_prescription/static/src/js/fitting_parameters_button/fitting_parameters_button.js",
             "optical_prescription/static/src/js/fitting_parameters_button/fitting_parameters_button.xml",
+            "optical_prescription/static/src/js/product_name_suggest/product_name_suggest.js",
+            "optical_prescription/static/src/js/product_name_suggest/product_name_suggest.xml",
         ],
         "point_of_sale._assets_pos": [
             "optical_prescription/static/src/js/pos_order_line_discount_amount.js",

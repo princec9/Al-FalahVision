@@ -69,6 +69,11 @@ class ProductTemplate(models.Model):
     followup_month = fields.Integer(
         string="Month",
     )
+    _reference_model_unique_active = models.UniqueIndex(
+        "(default_code, model_id) WHERE active IS TRUE "
+        "AND default_code IS NOT NULL AND default_code <> ''",
+        "A product with this Internal Reference and Model already exists in the inventory list.",
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
