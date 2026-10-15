@@ -75,9 +75,11 @@
                         <group>
                             <field name="source_company_id"
                                    readonly="1"/>
-                            <field name="destination_company_id"
-                            />
-
+                            <field name="destination_company_id" context="{'intercompany_all_companies': True}"/>
+                            <field name="destination_location_id"
+                                           domain="[('company_id', '=', destination_company_id), ('usage', '=', 'internal')]"
+                                           options="{'no_create': True}"
+                                           readonly="state != 'draft'"/>
                         </group>
                         <group>
                             <field name="transfer_date"
@@ -100,6 +102,11 @@
                                     <field name="destination_on_hand_qty"/>
                                 </list>
                             </field>
+                            <group class="oe_subtotal_footer" colspan="2" name="transfer_total">
+                                <field name="total_quantity"
+                                       class="oe_subtotal_footer_separator"
+                                       readonly="1"/>
+                            </group>
                         </page>
 
                         <page string="Additional Information">
@@ -128,6 +135,7 @@
                                            readonly="state != 'draft'"/>
                                     <field name="destination_location_id"
                                            domain="[('company_id', '=', destination_company_id), ('usage', '=', 'internal')]"
+                                           options="{'no_create': True}"
                                            readonly="state != 'draft'"/>
                                 </group>
                             </group>

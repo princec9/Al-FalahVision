@@ -4,6 +4,36 @@ from odoo.tools.float_utils import float_compare, float_is_zero
 from odoo import models
 
 from markupsafe import Markup
+
+
+
+class IntercompanySudoSearchMixin(models.AbstractModel):
+    _name = "intercompany.sudo.search.mixin"
+    _description = "Search across all companies when flagged by context"
+
+    def _ic_sudo_if_flagged(self):
+        if self.env.context.get("intercompany_all_companies"):
+            return self.sudo()
+        return self
+
+    @api.model
+    def name_search(self, *args, **kwargs):
+        return super(IntercompanySudoSearchMixin, self._ic_sudo_if_flagged()).name_search(*args, **kwargs)
+
+    @api.model
+    def web_name_search(self, *args, **kwargs):
+        return super(IntercompanySudoSearchMixin, self._ic_sudo_if_flagged()).web_name_search(*args, **kwargs)
+
+    @api.model
+    def web_search_read(self, *args, **kwargs):
+        return super(IntercompanySudoSearchMixin, self._ic_sudo_if_flagged()).web_search_read(*args, **kwargs)
+
+
+class ResCompany(models.Model):
+    _name = "res.company"
+    _inherit = ["res.company", "intercompany.sudo.search.mixin"]
+
+
 class IntercompanyStockTransfer(models.Model):
     _name = 'intercompany.stock.transfer'
     _description = 'Inter-Company Stock Transfer'
@@ -121,7 +151,8 @@ class IntercompanyStockTransfer(models.Model):
         string="Source Company",
         required=True,
         check_company=True,
-        tracking=True,default=lambda self: self.env.company,
+        tracking=True,
+        default=lambda self: self.env.company,
     )
 
     destination_company_id = fields.Many2one(
@@ -275,6 +306,121 @@ class IntercompanyStockTransfer(models.Model):
         string="Destination Stock Moves",
         readonly=True,
     )
+    total_quantity = fields.Float(
+        string="Total Quantity",
+        digits="Product Unit",
+        compute="_compute_total_quantity",
+        store=True,
+    )
+
+    @api.depends("line_ids.quantity")
+    def _compute_total_quantity(self):
+        for rec in self:
+            rec.total_quantity = sum(rec.line_ids.mapped("quantity"))
+
+    # ============================================================
+    # HELPERS (SUDO ACCESS TO OTHER COMPANIES)
+    # ============================================================
+
+    @api.model
+    def _get_company_warehouse(self, company):
+        """
+        Return the first warehouse of the given company.
+        Uses sudo() so it works even when the current user has no
+        access to that company.
+        """
+        if not company:
+            return self.env["stock.warehouse"]
+        return self.env["stock.warehouse"].sudo().search(
+            [("company_id", "=", company.id)],
+            limit=1,
+        )
+
+    # ============================================================
+    # POST STOCK ON HAND IN CHATTER
+    # ============================================================
+
+    def _post_stock_chatter(self, stage):
+        Quant = self.env["stock.quant"].sudo()
+
+        for rec in self:
+            messages = []
+
+            for line in rec.line_ids:
+                source_qty = 0.0
+                destination_qty = 0.0
+                product = line.product_id.sudo()
+
+                if rec.source_company_id and rec.source_location_id:
+                    source_qty = Quant._get_available_quantity(
+                        product.with_company(rec.source_company_id),
+                        rec.source_location_id.sudo(),
+                        strict=False,
+                    )
+
+                if rec.destination_company_id and rec.destination_location_id:
+                    destination_qty = Quant._get_available_quantity(
+                        product.with_company(rec.destination_company_id),
+                        rec.destination_location_id.sudo(),
+                        strict=False,
+                    )
+
+                messages.append(
+                    Markup(
+                        "<b>%s</b><br/>"
+                        "Source On Hand: %s<br/>"
+                        "Destination On Hand: %s"
+                    )
+                    % (
+                        line.product_id.display_name,
+                        source_qty,
+                        destination_qty,
+                    )
+                )
+
+            if messages:
+                body = Markup("<b>%s</b><br/><br/>%s") % (
+                    stage,
+                    Markup("<br/><br/>").join(messages),
+                )
+                rec.message_post(
+                    body=body,
+                    subtype_xmlid="mail.mt_note",
+                )
+
+    # ============================================================
+    # VIEW STOCK QUANTS
+    # ============================================================
+
+    def action_view_stock_quants(self):
+        self.ensure_one()
+
+        products = self.line_ids.mapped("product_id")
+
+        if not products:
+            raise UserError(
+                _("No products are available in this transfer.")
+            )
+
+        # All companies currently enabled in the company switcher
+        active_companies = self.env.companies
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Stock Quants"),
+            "res_model": "stock.quant",
+            "view_mode": "list,form",
+            "domain": [
+                ("product_id", "in", products.ids),
+                ("company_id", "in", active_companies.ids),
+                ("location_id.usage", "=", "internal"),
+            ],
+            "context": {
+                "create": False,
+                "edit": False,
+                "delete": False,
+            },
+        }
 
     # ============================================================
     # DEFAULT TRANSIT LOCATION
@@ -315,13 +461,8 @@ class IntercompanyStockTransfer(models.Model):
         # Source Company
         vals["source_company_id"] = company.id
 
-        # Source Warehouse
-        warehouse = self.env["stock.warehouse"].search(
-            [
-                ("company_id", "=", company.id),
-            ],
-            limit=1,
-        )
+        # Source Warehouse / Location
+        warehouse = self._get_company_warehouse(company)
 
         if warehouse:
             vals["source_warehouse_id"] = warehouse.id
@@ -351,10 +492,10 @@ class IntercompanyStockTransfer(models.Model):
             # Transfer number
             if vals.get("name", _("New")) == _("New"):
                 vals["name"] = (
-                    self.env["ir.sequence"].next_by_code(
-                        "intercompany.stock.transfer"
-                    )
-                    or _("New")
+                        self.env["ir.sequence"].next_by_code(
+                            "intercompany.stock.transfer"
+                        )
+                        or _("New")
                 )
 
             # Responsible user
@@ -381,17 +522,11 @@ class IntercompanyStockTransfer(models.Model):
             rec.source_warehouse_id = False
             rec.source_location_id = False
 
-            if rec.source_company_id:
-                warehouse = self.env["stock.warehouse"].search(
-                    [
-                        ("company_id", "=", rec.source_company_id.id),
-                    ],
-                    limit=1,
-                )
+            warehouse = self._get_company_warehouse(rec.source_company_id)
 
-                if warehouse:
-                    rec.source_warehouse_id = warehouse
-                    rec.source_location_id = warehouse.lot_stock_id
+            if warehouse:
+                rec.source_warehouse_id = warehouse
+                rec.source_location_id = warehouse.lot_stock_id
 
     # ============================================================
     # ONCHANGE - DESTINATION COMPANY
@@ -404,21 +539,15 @@ class IntercompanyStockTransfer(models.Model):
             rec.destination_warehouse_id = False
             rec.destination_location_id = False
 
-            if rec.destination_company_id:
-                warehouse = self.env["stock.warehouse"].search(
-                    [
-                        ("company_id", "=", rec.destination_company_id.id),
-                    ],
-                    limit=1,
-                )
+            warehouse = self._get_company_warehouse(
+                rec.destination_company_id
+            )
 
-                if warehouse:
-                    rec.destination_warehouse_id = warehouse
+            if warehouse:
+                rec.destination_warehouse_id = warehouse
 
-                    if warehouse.lot_stock_id:
-                        rec.destination_location_id = (
-                            warehouse.lot_stock_id
-                        )
+                if warehouse.lot_stock_id:
+                    rec.destination_location_id = warehouse.lot_stock_id
 
     # ============================================================
     # ONCHANGE - SOURCE WAREHOUSE
@@ -445,7 +574,7 @@ class IntercompanyStockTransfer(models.Model):
         for rec in self:
             if rec.destination_warehouse_id:
                 rec.destination_location_id = (
-                    rec.destination_warehouse_id.lot_stock_id
+                    rec.destination_warehouse_id.sudo().lot_stock_id
                 )
             else:
                 rec.destination_location_id = False
@@ -453,37 +582,12 @@ class IntercompanyStockTransfer(models.Model):
     # ONCHANGE - TRANSIT
     # ============================================================
 
-    @api.onchange(
-        "source_company_id",
-        "destination_company_id",
-    )
+    @api.onchange("source_company_id", "destination_company_id")
     def _onchange_companies_transit(self):
-
-        transit = (
-            self.env["ir.config_parameter"]
-            .sudo()
-            .get_param(
-                "intercompany_stock_transfer.transit_location_id"
-            )
-        )
+        transit_id = self._default_transit_location_id()
 
         for rec in self:
-
-            if transit and transit.isdigit():
-
-                location = (
-                    self.env["stock.location"]
-                    .sudo()
-                    .browse(int(transit))
-                )
-
-                if location.exists():
-                    rec.transit_location_id = location
-                else:
-                    rec.transit_location_id = False
-
-            else:
-                rec.transit_location_id = False
+            rec.transit_location_id = transit_id or False
 
     # ============================================================
     # GET CONFIGURED TRANSIT
@@ -494,9 +598,7 @@ class IntercompanyStockTransfer(models.Model):
         value = (
             self.env["ir.config_parameter"]
             .sudo()
-            .get_param(
-                "intercompany_stock_transfer.transit_location_id"
-            )
+            .get_param("intercompany_stock_transfer.transit_location_id")
         )
 
         if not value or not value.isdigit():
@@ -508,11 +610,7 @@ class IntercompanyStockTransfer(models.Model):
                 )
             )
 
-        location = (
-            self.env["stock.location"]
-            .sudo()
-            .browse(int(value))
-        )
+        location = self.env["stock.location"].sudo().browse(int(value))
 
         if not location.exists():
 
@@ -552,35 +650,26 @@ class IntercompanyStockTransfer(models.Model):
         self.ensure_one()
 
         # Source and destination companies must differ
-        if (
-            self.source_company_id
-            == self.destination_company_id
-        ):
+        if self.source_company_id == self.destination_company_id:
             raise ValidationError(
-                _(
-                    "Source and destination companies "
-                    "must be different."
-                )
+                _("Source and destination companies must be different.")
             )
 
         # Source warehouse
         if (
-            not self.source_warehouse_id
-            or self.source_warehouse_id.company_id
-            != self.source_company_id
+                not self.source_warehouse_id
+                or self.source_warehouse_id.company_id != self.source_company_id
         ):
             raise ValidationError(
-                _(
-                    "The source warehouse must belong "
-                    "to the source company."
-                )
+                _("The source warehouse must belong to the source company.")
             )
 
-        # Destination warehouse
+        # Destination warehouse (sudo: user may not access that company)
+        destination_warehouse = self.destination_warehouse_id.sudo()
         if (
-            not self.destination_warehouse_id
-            or self.destination_warehouse_id.company_id
-            != self.destination_company_id
+                not destination_warehouse
+                or destination_warehouse.company_id
+                != self.destination_company_id
         ):
             raise ValidationError(
                 _(
@@ -591,22 +680,19 @@ class IntercompanyStockTransfer(models.Model):
 
         # Source location
         if (
-            not self.source_location_id
-            or self.source_location_id.company_id
-            != self.source_company_id
+                not self.source_location_id
+                or self.source_location_id.company_id != self.source_company_id
         ):
             raise ValidationError(
-                _(
-                    "The source location must belong "
-                    "to the source company."
-                )
+                _("The source location must belong to the source company.")
             )
 
-        # Destination location
+        # Destination location (sudo: user may not access that company)
+        destination_location = self.destination_location_id.sudo()
         if (
-            not self.destination_location_id
-            or self.destination_location_id.company_id
-            != self.destination_company_id
+                not destination_location
+                or destination_location.company_id
+                != self.destination_company_id
         ):
             raise ValidationError(
                 _(
@@ -625,27 +711,18 @@ class IntercompanyStockTransfer(models.Model):
         if self.transit_location_id.company_id:
 
             raise ValidationError(
-                _(
-                    "The transit location must be shared "
-                    "(Company is empty)."
-                )
+                _("The transit location must be shared (Company is empty).")
             )
 
         if self.transit_location_id.usage != "transit":
 
             raise ValidationError(
-                _(
-                    "The transit location must be "
-                    "of type Transit."
-                )
+                _("The transit location must be of type Transit.")
             )
 
         # Products
         if not self.line_ids:
-
-            raise ValidationError(
-                _("Add at least one product line.")
-            )
+            raise ValidationError(_("Add at least one product line."))
 
         for line in self.line_ids:
             line._validate_line()
@@ -659,31 +736,24 @@ class IntercompanyStockTransfer(models.Model):
         Quant = self.env["stock.quant"].sudo()
 
         for line in self.line_ids:
-
-            product = line.product_id.with_company(
+            product = line.product_id.sudo().with_company(
                 self.source_company_id
             )
 
             available = Quant._get_available_quantity(
                 product,
-                self.source_location_id,
+                self.source_location_id.sudo(),
                 strict=False,
                 allow_negative=False,
             )
 
-            required = (
-                line.product_uom_id._compute_quantity(
-                    line.quantity,
-                    product.uom_id,
-                    round=False,
-                )
+            required = line.product_uom_id._compute_quantity(
+                line.quantity,
+                product.uom_id,
+                round=False,
             )
 
-            if product.uom_id.compare(
-                available,
-                required,
-            ) < 0:
-
+            if product.uom_id.compare(available, required) < 0:
                 raise ValidationError(
                     _(
                         "Insufficient stock for %(product)s.\n"
@@ -710,16 +780,12 @@ class IntercompanyStockTransfer(models.Model):
         picking_type = self.source_warehouse_id.out_type_id
 
         if (
-            not picking_type
-            or picking_type.company_id
-            != self.source_company_id
+                not picking_type
+                or picking_type.company_id != self.source_company_id
         ):
 
             raise UserError(
-                _(
-                    "A source warehouse delivery "
-                    "operation type is required."
-                )
+                _("A source warehouse delivery operation type is required.")
             )
 
         return picking_type
@@ -729,22 +795,16 @@ class IntercompanyStockTransfer(models.Model):
     # ============================================================
 
     def _get_destination_picking_type(self):
-
-        picking_type = (
-            self.destination_warehouse_id.in_type_id
-        )
+        # sudo: user may not have access to the destination company
+        picking_type = self.destination_warehouse_id.sudo().in_type_id
 
         if (
-            not picking_type
-            or picking_type.company_id
-            != self.destination_company_id
+                not picking_type
+                or picking_type.company_id != self.destination_company_id
         ):
 
             raise UserError(
-                _(
-                    "A destination warehouse receipt "
-                    "operation type is required."
-                )
+                _("A destination warehouse receipt operation type is required.")
             )
 
         return picking_type
@@ -753,13 +813,8 @@ class IntercompanyStockTransfer(models.Model):
     # PREPARE PICKING VALUES
     # ============================================================
 
-    def _prepare_picking_vals(
-        self,
-        picking_type,
-        origin,
-    ):
-
-        company = picking_type.company_id
+    def _prepare_picking_vals(self, picking_type, origin):
+        company = picking_type.sudo().company_id
 
         return {
             "picking_type_id": picking_type.id,
@@ -793,29 +848,17 @@ class IntercompanyStockTransfer(models.Model):
 
         picking_type = self._get_source_picking_type()
 
-        picking = (
-            Picking
-            .with_company(self.source_company_id)
-            .create(
-                self._prepare_picking_vals(
-                    picking_type,
-                    self.name,
-                )
-            )
+        picking = Picking.with_company(self.source_company_id).create(
+            self._prepare_picking_vals(picking_type, self.name)
         )
         for line in self.line_ids:
-            Move.with_company(
-                self.source_company_id
-            ).create(
+            Move.with_company(self.source_company_id).create(
                 {
                     "product_id": line.product_id.id,
-
-                    "product_uom_qty": (
-                        line.product_uom_id._compute_quantity(
-                            line.quantity,
-                            line.product_id.uom_id,
-                            round=False,
-                        )
+                    "product_uom_qty": line.product_uom_id._compute_quantity(
+                        line.quantity,
+                        line.product_id.uom_id,
+                        round=False,
                     ),
 
                     "product_uom": line.product_id.uom_id.id,
@@ -853,30 +896,17 @@ class IntercompanyStockTransfer(models.Model):
 
     def _create_destination_picking(self):
 
-        Picking = self.env["stock.picking"]
-        Move = self.env["stock.move"]
+        Picking = self.env["stock.picking"].sudo()
+        Move = self.env["stock.move"].sudo()
 
-        picking_type = (
-            self._get_destination_picking_type()
+        picking_type = self._get_destination_picking_type()
+
+        picking = Picking.with_company(self.destination_company_id).create(
+            self._prepare_picking_vals(picking_type, self.name)
         )
 
-        picking = (
-            Picking
-            .with_company(
-                self.destination_company_id
-            )
-            .create(
-                self._prepare_picking_vals(
-                    picking_type,
-                    self.name,
-                )
-            )
-        )
-
-        for source_move in self.source_move_ids:
-            Move.with_company(
-                self.destination_company_id
-            ).create(
+        for source_move in self.source_move_ids.sudo():
+            Move.with_company(self.destination_company_id).create(
                 {
                     "product_id": source_move.product_id.id,
 
@@ -902,9 +932,7 @@ class IntercompanyStockTransfer(models.Model):
         picking.action_confirm()
         picking.action_assign()
 
-        self._apply_source_tracking_to_destination(
-            picking
-        )
+        self._apply_source_tracking_to_destination(picking)
 
         return picking
 
@@ -912,19 +940,11 @@ class IntercompanyStockTransfer(models.Model):
     # APPLY LOT / SERIAL TRACKING
     # ============================================================
 
-    def _apply_source_tracking_to_destination(
-        self,
-        picking,
-    ):
+    def _apply_source_tracking_to_destination(self, picking):
+        picking = picking.sudo()
 
-        source_lines = (
-            self.source_move_ids
-            .move_line_ids
-            .filtered(
-                lambda ml:
-                    ml.state == "done"
-                    and ml.quantity
-            )
+        source_lines = self.source_move_ids.sudo().move_line_ids.filtered(
+            lambda ml: ml.state == "done" and ml.quantity
         )
 
         if not source_lines:
@@ -933,9 +953,7 @@ class IntercompanyStockTransfer(models.Model):
         for dest_move in picking.move_ids:
 
             src_lines = source_lines.filtered(
-                lambda ml:
-                    ml.product_id
-                    == dest_move.product_id
+                lambda ml: ml.product_id == dest_move.product_id
             )
 
             if not src_lines:
@@ -955,55 +973,32 @@ class IntercompanyStockTransfer(models.Model):
                         {
                             "picking_id": picking.id,
                             "move_id": dest_move.id,
-
-                            "product_id": (
-                                dest_move.product_id.id
-                            ),
-
-                            "product_uom_id": (
-                                dest_move.product_uom.id
-                            ),
-
-                            "location_id": (
-                                self.transit_location_id.id
-                            ),
-
+                            "product_id": dest_move.product_id.id,
+                            "product_uom_id": dest_move.product_uom.id,
+                            "location_id": self.transit_location_id.id,
                             "location_dest_id": (
                                 self.destination_location_id.id
                             ),
-
-                            "lot_id": (
-                                src_line.lot_id.id
-                            ),
-
-                            "quantity": (
-                                src_line.quantity
-                            ),
-
+                            "lot_id": src_line.lot_id.id,
+                            "quantity": src_line.quantity,
                             "picked": True,
-
-                            "company_id": (
-                                self.destination_company_id.id
-                            ),
+                            "company_id": self.destination_company_id.id,
                         },
                     )
                 )
 
             if commands:
-
-                dest_move.write(
-                    {
-                        "move_line_ids": commands
-                    }
-                )
+                dest_move.write({"move_line_ids": commands})
 
     # ============================================================
     # CONFIRM
     # ============================================================
 
     def action_confirm(self):
-
-        for rec in self:
+        # Run the whole workflow with sudo(): the destination company
+        # may not be active in the company switcher (or accessible to
+        # the user), and its records are hidden by multi-company rules.
+        for rec in self.sudo():
 
             if rec.state != "draft":
                 continue
@@ -1022,14 +1017,9 @@ class IntercompanyStockTransfer(models.Model):
             rec.state = "confirmed"
 
             rec.message_post(
-                body=_(
-                    "Source picking %s created."
-                )
-                % picking.display_name
+                body=_("Source picking %s created.") % picking.display_name
             )
-            rec._post_stock_chatter(
-                _("Transfer Confirmed")
-            )
+            rec._post_stock_chatter(_("Transfer Confirmed"))
 
         return True
 
@@ -1038,43 +1028,23 @@ class IntercompanyStockTransfer(models.Model):
     # ============================================================
 
     def action_send_to_transit(self):
-
-        for rec in self:
+        # Run the whole workflow with sudo(): the destination company
+        # may not be active in the company switcher (or accessible to
+        # the user), and its records are hidden by multi-company rules.
+        for rec in self.sudo():
 
             if rec.state != "confirmed":
 
                 raise UserError(
-                    _(
-                        "Only confirmed transfers "
-                        "can be sent to transit."
-                    )
+                    _("Only confirmed transfers can be sent to transit.")
                 )
 
             picking = rec.source_picking_id
 
             if not picking:
 
-                raise UserError(
-                    _(
-                        "The source picking "
-                        "is not available."
-                    )
-                )
-
-            if picking.state in (
-                "cancel",
-                "done",
-            ):
-
-                if picking.state == "done":
-                    pass
-                else:
-                    raise UserError(
-                        _(
-                            "The source picking "
-                            "is cancelled."
-                        )
-                    )
+            if picking.state == "cancel":
+                raise UserError(_("The source picking is cancelled."))
 
             if picking.state != "done":
 
@@ -1087,8 +1057,7 @@ class IntercompanyStockTransfer(models.Model):
                             "Odoo returned a validation wizard "
                             "for source picking %s. "
                             "Open the picking and complete "
-                            "the validation, then retry "
-                            "this button."
+                            "the validation, then retry this button."
                         )
                         % picking.display_name
                     )
@@ -1097,14 +1066,9 @@ class IntercompanyStockTransfer(models.Model):
             rec._ensure_source_move_quantities()
 
             # Create destination receipt
-            destination = (
-                rec._create_destination_picking()
-            )
+            destination = rec._create_destination_picking()
 
-            rec.destination_picking_id = (
-                destination.id
-            )
-
+            rec.destination_picking_id = destination.id
             rec.state = "in_transit"
 
             rec.message_post(
@@ -1113,9 +1077,7 @@ class IntercompanyStockTransfer(models.Model):
                     "Goods are now in transit."
                 )
             )
-            rec._post_stock_chatter(
-                _("Sent to Transit")
-            )
+            rec._post_stock_chatter(_("Sent to Transit"))
 
         return True
 
@@ -1126,8 +1088,7 @@ class IntercompanyStockTransfer(models.Model):
     def _ensure_source_move_quantities(self):
 
         for move in self.source_move_ids.filtered(
-            lambda m:
-                m.state not in ("done", "cancel")
+                lambda m: m.state not in ("done", "cancel")
         ):
 
             if move.product_id.tracking == "serial":
@@ -1148,16 +1109,15 @@ class IntercompanyStockTransfer(models.Model):
     # ============================================================
 
     def action_receive(self):
-
-        for rec in self:
+        # Run the whole workflow with sudo(): the destination company
+        # may not be active in the company switcher (or accessible to
+        # the user), and its records are hidden by multi-company rules.
+        for rec in self.sudo():
 
             if rec.state != "in_transit":
 
                 raise UserError(
-                    _(
-                        "Only transfers in transit "
-                        "can be received."
-                    )
+                    _("Only transfers in transit can be received.")
                 )
 
             picking = rec.destination_picking_id
@@ -1165,10 +1125,7 @@ class IntercompanyStockTransfer(models.Model):
             if not picking:
 
                 raise UserError(
-                    _(
-                        "The destination picking "
-                        "does not exist."
-                    )
+                    _("The destination picking does not exist.")
                 )
 
             if picking.state != "done":
@@ -1182,8 +1139,7 @@ class IntercompanyStockTransfer(models.Model):
                             "Odoo returned a validation wizard "
                             "for destination picking %s. "
                             "Open the picking and complete "
-                            "the validation, then retry "
-                            "this button."
+                            "the validation, then retry this button."
                         )
                         % picking.display_name
                     )
@@ -1196,9 +1152,8 @@ class IntercompanyStockTransfer(models.Model):
                         "validated before receiving."
                     )
                 )
-            rec._post_stock_chatter(
-                _("Transfer Received")
-            )
+
+            rec._post_stock_chatter(_("Transfer Received"))
 
             rec.state = "received"
 
@@ -1216,8 +1171,10 @@ class IntercompanyStockTransfer(models.Model):
     # ============================================================
 
     def action_cancel(self):
-
-        for rec in self:
+        # Run the whole workflow with sudo(): the destination company
+        # may not be active in the company switcher (or accessible to
+        # the user), and its records are hidden by multi-company rules.
+        for rec in self.sudo():
 
             if rec.state == "received":
 
@@ -1241,20 +1198,15 @@ class IntercompanyStockTransfer(models.Model):
             if rec.state == "confirmed":
 
                 if (
-                    rec.source_picking_id
-                    and rec.source_picking_id.state
-                    not in ("done", "cancel")
+                        rec.source_picking_id
+                        and rec.source_picking_id.state not in ("done", "cancel")
                 ):
 
                     rec.source_picking_id.action_cancel()
 
             rec.state = "cancelled"
 
-            rec.message_post(
-                body=_(
-                    "Transfer cancelled."
-                )
-            )
+            rec.message_post(body=_("Transfer cancelled."))
 
         return True
 
@@ -1265,10 +1217,7 @@ class IntercompanyStockTransfer(models.Model):
     def action_view_source_picking(self):
 
         self.ensure_one()
-
-        return self._action_view_picking(
-            self.source_picking_id
-        )
+        return self._action_view_picking(self.source_picking_id)
 
     # ============================================================
     # VIEW DESTINATION PICKING
@@ -1277,10 +1226,7 @@ class IntercompanyStockTransfer(models.Model):
     def action_view_destination_picking(self):
 
         self.ensure_one()
-
-        return self._action_view_picking(
-            self.destination_picking_id
-        )
+        return self._action_view_picking(self.destination_picking_id)
 
     # ============================================================
     # VIEW STOCK MOVES
@@ -1290,19 +1236,14 @@ class IntercompanyStockTransfer(models.Model):
 
         self.ensure_one()
 
-        moves = (
-            self.source_move_ids
-            | self.destination_move_ids
-        )
+        moves = self.source_move_ids | self.destination_move_ids
 
         return {
             "type": "ir.actions.act_window",
             "name": _("Stock Moves"),
             "res_model": "stock.move",
             "view_mode": "list,form",
-            "domain": [
-                ("id", "in", moves.ids)
-            ],
+            "domain": [("id", "in", moves.ids)],
         }
 
     # ============================================================
@@ -1312,12 +1253,7 @@ class IntercompanyStockTransfer(models.Model):
     def _action_view_picking(self, picking):
 
         if not picking:
-
-            raise UserError(
-                _(
-                    "No picking has been created yet."
-                )
-            )
+            raise UserError(_("No picking has been created yet."))
 
         return {
             "type": "ir.actions.act_window",

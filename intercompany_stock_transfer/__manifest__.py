@@ -1,6 +1,6 @@
 {
     'name': 'Inter-Company Stock Transfer (Transit)',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Inventory/Inventory',
     'summary': 'Inventory-only inter-company stock transfer through a shared transit location',
     'description': '''

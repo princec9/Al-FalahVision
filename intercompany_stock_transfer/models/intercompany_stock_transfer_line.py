@@ -21,17 +21,26 @@ class IntercompanyStockTransferLine(models.Model):
         readonly=True,
     )
     transfer_id = fields.Many2one(
-        "intercompany.stock.transfer", required=True, ondelete="cascade",
+        "intercompany.stock.transfer",
+        required=True,
+        ondelete="cascade",
     )
     product_id = fields.Many2one(
-        "product.product", string="Product", required=True, check_company=False,
+        "product.product",
+        string="Product",
+        required=True,
+        check_company=False,
         domain="[('is_storable', '=', True), ('active', '=', True)]",
     )
     product_uom_id = fields.Many2one(
-        "uom.uom", string="UoM", required=True,
+        "uom.uom",
+        string="UoM",
+        required=True,
     )
     quantity = fields.Float(
-        string="Quantity", required=True, digits="Product Unit",
+        string="Quantity",
+        required=True,
+        digits="Product Unit",
     )
 
     @api.depends(
@@ -42,7 +51,9 @@ class IntercompanyStockTransferLine(models.Model):
         "transfer_id.destination_location_id",
     )
     def _compute_on_hand_qty(self):
-        Quant = self.env["stock.quant"]
+        # sudo: the current user may have no access to the
+        # destination company (or its locations / quants).
+        Quant = self.env["stock.quant"].sudo()
 
         for line in self:
             line.source_on_hand_qty = 0.0
@@ -53,67 +64,47 @@ class IntercompanyStockTransferLine(models.Model):
             if not line.product_id or not transfer:
                 continue
 
-            # ========================================================
-            # SOURCE ON HAND
-            # ========================================================
+            product = line.product_id.sudo()
 
+            # ---------------- SOURCE ----------------
+            if transfer.source_company_id and transfer.source_location_id:
+                line.source_on_hand_qty = Quant._get_available_quantity(
+                    product.with_company(transfer.source_company_id),
+                    transfer.source_location_id.sudo(),
+                    strict=False,
+                )
+
+            # ---------------- DESTINATION ----------------
             if (
-                    transfer.source_company_id
-                    and transfer.source_location_id
+                transfer.destination_company_id
+                and transfer.destination_location_id
             ):
-                source_product = line.product_id.with_company(
-                    transfer.source_company_id
+                line.destination_on_hand_qty = Quant._get_available_quantity(
+                    product.with_company(transfer.destination_company_id),
+                    transfer.destination_location_id.sudo(),
+                    strict=False,
                 )
 
-                line.source_on_hand_qty = (
-                    Quant._get_available_quantity(
-                        source_product,
-                        transfer.source_location_id,
-                        strict=False,
-                    )
-                )
-
-            # ========================================================
-            # DESTINATION ON HAND
-            # ========================================================
-
-            if (
-                    transfer.destination_company_id
-                    and transfer.destination_location_id
-            ):
-                destination_product = line.product_id.with_company(
-                    transfer.destination_company_id
-                )
-
-                line.destination_on_hand_qty = (
-                    Quant._get_available_quantity(
-                        destination_product,
-                        transfer.destination_location_id,
-                        strict=False,
-                    )
-                )
+    # ============================================================
+    # ONCHANGE
+    # ============================================================
 
     @api.onchange("product_id")
     def _onchange_product(self):
         for line in self:
             line.product_uom_id = (
-                line.product_id.uom_id
-                if line.product_id
-                else False
+                line.product_id.uom_id if line.product_id else False
             )
 
     def _validate_line(self):
         self.ensure_one()
 
         if not self.product_id:
-            raise ValidationError(
-                _("Product is required.")
-            )
+            raise ValidationError(_("Product is required."))
 
         if not self.product_id.active:
             raise ValidationError(
-                _("Product %s is inactive.")
-                % self.product_id.display_name
+                _("Product %s is inactive.") % self.product_id.display_name
             )
 
         if not self.product_id.is_storable:
@@ -128,8 +119,8 @@ class IntercompanyStockTransferLine(models.Model):
                 % self.product_id.display_name
             )
 
-        # Odoo 19: validate UoM compatibility
-        # using UoM conversion instead of category_id.
+        # Odoo 19: validate UoM compatibility using UoM conversion
+        # instead of category_id.
         try:
             self.product_uom_id._compute_quantity(
                 1.0,
@@ -158,4 +149,6 @@ class IntercompanyStockTransferLine(models.Model):
     def _check_quantity(self):
         for line in self:
             if line.quantity <= 0:
-                raise ValidationError(_("Quantity must be greater than zero."))
+                raise ValidationError(
+                    _("Quantity must be greater than zero.")
+                )
