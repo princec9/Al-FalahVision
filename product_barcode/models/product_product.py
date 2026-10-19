@@ -74,7 +74,7 @@ class ProductProduct(models.Model):
             number = str(sequence.next_by_id()).zfill(padding)
             barcode = f"{prefix}{number}{suffix}"
             if not self.env['product.product'].search([('barcode', '=', barcode)], limit=1):
-                return barcode, barcode  # keep your existing default_code rule here if it differs
+                return barcode, number  # keep your existing default_code rule here if it differs
         return False, False
 
     @api.model
