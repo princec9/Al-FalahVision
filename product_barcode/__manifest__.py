@@ -1,6 +1,6 @@
 {
     'name': 'Product Barcode Generator',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Inventory',
     'summary': 'Automatically generate product barcodes based on configurable prefix, padding, and suffix',
     'description': '''
