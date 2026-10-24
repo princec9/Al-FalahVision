@@ -113,6 +113,7 @@ class CommissionMixin(models.Model):
 
     res_id = fields.Many2one("sale.order.line")
     order_id = fields.Many2one('sale.order')
+    invoice_id = fields.Many2one('account.move')
     partner_id = fields.Many2one('res.partner')
     fitting_number = fields.Integer()
     fitting_type_id = fields.Many2one('fitting.type')

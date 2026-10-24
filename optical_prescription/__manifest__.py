@@ -48,7 +48,7 @@ This module depends on Optical Prescription Base module.
         "hr",
         "mrp", "point_of_sale",
         'sale',
-        'quality_control', 'sale_commission'
+        'quality_control', 'sale_commission','reimbursement'
     ],
 
     "data": [
