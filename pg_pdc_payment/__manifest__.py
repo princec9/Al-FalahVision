@@ -1,5 +1,5 @@
 {
-    'name': 'Petrogulf: PDC Payment Details',
+    'name': 'PDC Payment Details',
     'version': '19.0.1.0.0',
     'summary': 'Cheque Number and Cheque Date on payments registered with the PCD / PDC payment method',
     'description': """
