@@ -7,6 +7,7 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     prescription_count = fields.Integer(compute='_compute_prescription_count')
+    emarates_id = fields.Char(string="Emarates ID")
 
     dob = fields.Date(string='DOB')
     emp_personal = fields.Char(string="Employee Personal ID")
@@ -89,3 +90,9 @@ class ResPartner(models.Model):
             'domain': [('partner_id', '=', self.id)],
             'context': {'create': False, 'edit': False},
         }
+
+
+class ResCompany(models.Model):
+    _inherit = "res.company"
+
+    facility_number = fields.Char(string="DHA Facility Number")
