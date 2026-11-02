@@ -11,6 +11,9 @@
             <xpath expr="//field[@name='commission_based_on']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <xpath expr="//field[@name='periodicity']" position="after">
+                <field name="company_target"/>
+            </xpath>
 
             <!-- 2. Re-add it as a properly labelled, direct <group> field. -->
             <xpath expr="//field[@name='company_id']" position="after">
@@ -20,24 +23,54 @@
                        invisible="user_type != 'person'"/>
             </xpath>
 
+            <!-- Hide the native Sales People tab: it lists res.users. The
+                 partner-based "Sales People" tab below replaces it. -->
+            <xpath expr="//field[@name='user_ids']/ancestor::page[1]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
             <xpath expr="//notebook[@name='main_book']" position="inside">
-                <page string="Line Commission Formula"
-                      invisible="commission_based_on != 'sale_order_line'">
+                <page string="Sales People">
+                    <field name="partner_line_ids">
+                        <list editable="bottom">
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="other_plans" widget="many2many_tags"
+                                   readonly="1"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Commission Formula">
+                    <div class="alert alert-warning" role="alert"
+                         invisible="commission_based_on != 'account_move'">
+                        Attribution Level "Invoice": this formula decides the commission
+                        (once per sales person and target period). To use the
+                        <strong>Commissions</strong> tab table inside it, write
+                        <code>result = target_commission(target_completion)</code> and
+                        <code>result_type = 'amount'</code>.
+                    </div>
                     <div class="alert alert-info" role="alert">
                         <p class="mb-1"><strong>How to write this formula</strong></p>
                         <p class="mb-1">
-                            Runs once per report row. You must set two variables:
+                            Everything is read from posted customer invoices and credit notes (untaxed, company currency).
+                            "Invoice Line": runs once per account.move.line of the sales person (variables <code>line</code>, <code>move</code>, <code>product</code>, <code>amount_invoice</code>, <code>quantity</code>, <code>qty_invoice</code>, <code>price_unit</code>, <code>discount</code>, <code>sign</code>); the row commission is the sum.
+                            "Invoice": runs once per row, amount_invoice = invoices minus credit notes. You must set two variables:
                             <code>result</code> (a number) and <code>result_type</code>
                             (<code>'percentage'</code> or <code>'amount'</code>).
                         </p>
                         <p class="mb-1">
-                            Final commission = <code>total_sold * (result / 100)</code>
+                            Final commission = <code>achieved * (result / 100)</code>
                             if percentage, otherwise <code>result</code> directly.
                         </p>
                         <p class="mb-1">
-                            Available variables: <code>plan</code>, <code>user</code>,
-                            <code>total_sold</code>, <code>achieved</code>,
-                            <code>total_sold_qty</code>, <code>target</code>,
+                            Available variables: <code>plan</code>, <code>partner</code>,
+                            <code>achieved</code> (= <code>total_sold</code> = <code>amount_invoiced</code>),
+                            <code>adjustment</code>, <code>total_sold_qty</code>,
+                            <code>target</code>, <code>target_amount</code>, <code>target_completion</code>,
+                            <code>target_commission(c)</code>, <code>company_target</code>,
+                            <code>company_achieved</code>, <code>lines</code>, <code>moves</code>,
+                            <code>line_amount(l)</code>, <code>line_qty(l)</code>,
                             <code>date_from</code>, <code>date_to</code>,
                             <code>currency</code>, <code>company</code>,
                             <code>row</code>, <code>env</code>.

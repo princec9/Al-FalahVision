@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Move partners of older versions into the new tab (idempotent). -->
+    <function model="sale.commission.plan" name="_bt_migrate_partner_rel"/>
+    <!-- Fill empty sales person partners on existing orders/lines (idempotent). -->
+    <function model="sale.order" name="_bt_backfill_salesperson_partner"/>
+    <!-- Runs on every install and upgrade: native Commission report -> partner-wise report. -->
+    <function model="ir.actions.act_window" name="_bt_repoint_native_commission_report"/>
+</odoo>
