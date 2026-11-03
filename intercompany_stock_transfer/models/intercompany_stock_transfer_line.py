@@ -7,6 +7,13 @@ class IntercompanyStockTransferLine(models.Model):
     _description = "Inter-Company Stock Transfer Line"
     _order = "id"
 
+    sequence = fields.Integer(string="Sequence", default=10)
+    serial_no = fields.Integer(
+        string="S.No",
+        compute="_compute_serial_no",
+        readonly=True,
+    )
+
     source_on_hand_qty = fields.Float(
         string="Source Qty",
         digits="Product Unit",
@@ -42,6 +49,12 @@ class IntercompanyStockTransferLine(models.Model):
         required=True,
         digits="Product Unit",
     )
+
+    @api.depends("sequence", "transfer_id.line_ids")
+    def _compute_serial_no(self):
+        for line in self:
+            siblings = list(line.transfer_id.line_ids)
+            line.serial_no = siblings.index(line) + 1 if line in siblings else 0
 
     @api.depends(
         "product_id",

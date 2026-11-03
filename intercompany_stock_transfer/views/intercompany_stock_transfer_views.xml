@@ -77,9 +77,9 @@
                                    readonly="1"/>
                             <field name="destination_company_id" context="{'intercompany_all_companies': True}"/>
                             <field name="destination_location_id"
-                                           domain="[('company_id', '=', destination_company_id), ('usage', '=', 'internal')]"
-                                           options="{'no_create': True}"
-                                           readonly="state != 'draft'"/>
+                                   domain="[('company_id', '=', destination_company_id), ('usage', '=', 'internal')]"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
                         </group>
                         <group>
                             <field name="transfer_date"
@@ -95,6 +95,8 @@
                         <page string="Products">
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="serial_no" string="S.No" readonly="1"/>
                                     <field name="product_id"/>
                                     <field name="quantity"/>
                                     <field name="product_uom_id"/>

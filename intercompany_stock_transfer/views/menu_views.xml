@@ -42,6 +42,11 @@
               action="action_intercompany_stock_transfers"
               sequence="10"
               groups="intercompany_stock_transfer.group_intercompany_transfer_user"/>
+    <menuitem id="menu_intercompany_transfer_report"
+              name="Inter-Company Analysis"
+              parent="menu_intercompany_stock_transfer_root"
+              action="action_intercompany_transfer_report"
+              sequence="20"/>
 
 
 </odoo>

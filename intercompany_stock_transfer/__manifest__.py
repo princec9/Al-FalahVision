@@ -1,6 +1,6 @@
 {
     'name': 'Inter-Company Stock Transfer (Transit)',
-    'version': '19.0.1.0.7',
+    'version': '19.0.1.0.8',
     'category': 'Inventory/Inventory',
     'summary': 'Inventory-only inter-company stock transfer through a shared transit location',
     'description': '''
@@ -20,6 +20,7 @@ or accounting valuation entries for its own moves.
         'data/sequence.xml',
         'views/intercompany_stock_transfer_views.xml',
         'views/res_config_settings_views.xml',
+        'views/intercompany_analysis.xml',
         'views/menu_views.xml',
     ],
     'demo': [],
