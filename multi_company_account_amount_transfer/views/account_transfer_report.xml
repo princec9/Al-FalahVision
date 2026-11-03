@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="action_report_account_amount_transfer" model="ir.actions.report">
+            <field name="name">Transfer Report</field>
+            <field name="model">account.amount.transfer</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">multi_company_account_amount_transfer.report_account_amount_transfer</field>
+            <field name="report_file">multi_company_account_amount_transfer.report_account_amount_transfer</field>
+            <field name="binding_model_id" ref="model_account_amount_transfer"/>
+            <field name="binding_type">report</field>
+            <field name="print_report_name">'Transfer Report - %s' % (object.name)</field>
+            <field name="paperformat_id" ref="multi_company_account_amount_transfer.paperformat_account_amount_transfer_report"/>
+        </record>
+
+    </data>
+</odoo>

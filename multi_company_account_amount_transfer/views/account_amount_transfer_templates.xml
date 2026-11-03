@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_account_amount_transfer_document">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=lang)"/>
+            <div class="page">
+                <h1 class="text-center"><strong>Transfer Report</strong></h1>
+                <br/>
+                <t t-if="o.state=='posted'">
+                    <h3><strong>Transfer Reference #: <span t-field="o.name"/></strong></h3>
+                </t>
+                <t t-if="o.state=='draft'">
+                    <h3><strong>Draft Transfer</strong></h3>
+                </t>
+                <t t-if="o.state=='cancel'">
+                    <h3><strong>Cancelled Transfer</strong></h3>
+                </t>
+                <div class="mb-4 mt-3">
+                    <div class="row">
+                        <div class="col-6" t-if="o.date">
+                            Transfer Date: <span t-field="o.date"/>
+                        </div>
+                        <div class="col-6" t-if="o.user_id">
+                            User: <span t-field="o.user_id.name"/>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6" t-if="o.ref">
+                            Reference: <span t-field="o.ref"/>
+                        </div>
+                    </div>
+                </div>
+<!--                <div class="row">-->
+                    <div class="col-6" t-if="o.ref">
+                        <strong>Transfer Lines:</strong>
+                    </div>
+<!--                </div>-->
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th><span>Journal Entry</span></th>
+                            <th><span>Name</span></th>
+                            <th><span>Company</span></th>
+                            <th><span>Journal</span></th>
+                            <th><span>Account</span></th>
+                            <th class="text-right"><span>Debit</span></th>
+                            <th class="text-right"><span>Credit</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="o.transfer_lines" t-as="line">
+                            <tr>
+                                <td><span t-field="line.journal_item_id.move_id.name"/></td>
+                                <td><span t-field="line.name"/></td>
+                                <td><span t-field="line.company_id.name"/></td>
+                                <td><span t-field="line.journal.sudo().name"/></td>
+                                <td><span t-field="line.account"/></td>
+                                <td class="text-right"><span t-field="line.debit"/></td>
+                                <td class="text-right"><span t-field="line.credit"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+<!--                <br/>-->
+                <t t-if="o.journal_entry_ids">
+                    <div class="col-6">
+                        <strong>Journal Entries:</strong>
+                    </div>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th><span>Journal Entry</span></th>
+                                <th><span>Company</span></th>
+                                <th><span>Journal</span></th>
+                                <th class="text-right"><span>Amount</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.journal_entry_ids" t-as="entry">
+                                <tr>
+                                    <td><span t-field="entry.name"/></td>
+                                    <td><span t-field="entry.company_id.name"/></td>
+                                    <td><span t-field="entry.journal_id.name"/></td>
+                                    <td class="text-right"><span t-field="entry.amount_total_signed"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_account_amount_transfer">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="lang" t-value="o.env.user.lang"/>
+                <t t-call="multi_company_account_amount_transfer.report_account_amount_transfer_document" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>

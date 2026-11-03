@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        <record id="group_multi_company_accounts_transfer" model="res.groups">
+            <field name="name">Allow Multi Companies Accounts Balance Transfer</field>
+        </record>
+</odoo>

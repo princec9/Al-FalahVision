@@ -139,7 +139,8 @@ class AccountReimbursementLine(models.Model):
                 line,
                 price_unit=line.price_unit,
                 quantity=line.quantity,
-                discount=line.discount,
+                discount=line.new_discount
+                # discount=line.discount,
             )
             AccountTax._add_tax_details_in_base_line(base_line, line.company_id)
             line.price_subtotal = base_line['tax_details']['raw_total_excluded_currency']
