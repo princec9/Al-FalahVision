@@ -9,7 +9,7 @@ They are saved on the payment and shown on the payment form, the Customer /
 Vendor Payments lists and the payments search.
 """,
     'category': 'Accounting/Accounting',
-    'author': 'Petrogulf',
+    'author': 'Broadtech',
     'license': 'LGPL-3',
     'depends': ['account'],
     'data': [
