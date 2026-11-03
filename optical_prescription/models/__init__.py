@@ -15,3 +15,4 @@ from . import pos_config
 from . import product_product
 from . import delivery_scan
 from . import stock_picking
+from . import purchase_report

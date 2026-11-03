@@ -29,7 +29,7 @@ NOTE:
 This module depends on Optical Prescription Base module.
     """,
 
-    "version": "19.0.1.0.3",
+    "version": "19.0.1.0.4",
 
     "author": "",
     "website": "",
@@ -56,6 +56,7 @@ This module depends on Optical Prescription Base module.
         "wizard/sale_discount_approval_wizard_views.xml",
         "views/sale.xml",
         "views/master_data_views.xml",
+        "views/purchase_report.xml",
 
         "views/res_partner.xml",
         "views/hr_employee.xml",

@@ -244,6 +244,8 @@
     <field name="arch" type="xml">
         <xpath expr="//field[@name='user_id']" position="after">
             <field name="line_user_id" optional="show"/>
+            <field name="brand_id" optional="show"/>
+            <field name="warehouse_code" optional="show"/>
         </xpath>
     </field>
 </record>
@@ -255,10 +257,16 @@
     <field name="arch" type="xml">
         <xpath expr="//search" position="inside">
             <field name="line_user_id"/>
+            <field name="brand_id"/>
+            <field name="warehouse_code" optional="show"/>
         </xpath>
         <xpath expr="//filter[@name='User']" position="after">
             <filter string="Sales Staff" name="line_user_group"
                     context="{'group_by': 'line_user_id'}"/>
+            <filter string="Brand" name="groupby_brand" context="{'group_by': 'brand_id'}"/>
+            <filter string="Brand" name="groupby_brand" context="{'group_by': 'brand_id'}"/>
+             <filter string="Warehouse Code" name="groupby_warehouse_code"
+                        context="{'group_by': 'warehouse_code'}"/>
         </xpath>
     </field>
 </record>
