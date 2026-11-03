@@ -9,6 +9,17 @@ class SaleOrderLine(models.Model):
     # ------------------------------------------------------------------
     # No automatic discount: the pricelist discount is only used as a limit
     # ------------------------------------------------------------------
+
+
+    def _get_display_price(self):
+        """Unit price after the pricelist is applied.
+
+        Standard Odoo may return the price *before* the pricelist discount
+        and rely on the `discount` field to show the reduction. Since the
+        discount is manual here, price_unit must already include it.
+        """
+        self.ensure_one()
+        return self._get_pricelist_price()
     @api.depends('product_id')
     def _compute_discount(self):
         for line in self:
