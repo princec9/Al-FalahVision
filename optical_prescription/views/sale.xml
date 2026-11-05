@@ -423,7 +423,7 @@
                             invisible="parent_line_id != False"/>
                     <field name="user_id" string="Salesperson"
                            readonly="discount_locked"
-                           invisible="is_lab_order and not parent_line_id"/>
+                           column_invisible="1"/>
                 </xpath>
         <xpath expr="//field[@name='order_line']//list//field[@name='discount']" position="replace"/>
                 <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="after">

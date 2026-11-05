@@ -29,7 +29,7 @@
                        options="{'no_create': True, 'no_open': True}"/>
             </xpath>
             <xpath expr="//field[@name='order_line']/list/field[@name='product_template_id']" position="after">
-                <field name="salesperson_partner_id" optional="show"
+                <field name="salesperson_partner_id"
                        options="{'no_create': True, 'no_open': True}"/>
             </xpath>
         </field>
