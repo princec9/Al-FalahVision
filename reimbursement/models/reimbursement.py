@@ -48,9 +48,9 @@ class AccountReimbursementLine(models.Model):
     tax_ids = fields.Many2many(
         comodel_name='account.tax',
         string="Taxes",
+        compute='_compute_tax_ids', store=True, readonly=False, precompute=True,
         context={'active_test': False},
         check_company=True,
-        tracking=True,
     )
     display_type = fields.Selection(
         selection=[
@@ -108,6 +108,11 @@ class AccountReimbursementLine(models.Model):
         digits='Discount',
         default=0.0,
     )
+    discount_amount = fields.Monetary(
+        string="Discount Amount",
+        currency_field="currency_id",
+        default=0.0,
+    )
     is_imported = fields.Boolean()
     new_discount = fields.Float(
         string="Discount (%)",
@@ -115,6 +120,17 @@ class AccountReimbursementLine(models.Model):
         default=0.0,
     )
 
+    @api.onchange('new_discount', 'price_unit', 'quantity')
+    def _onchange_new_discount(self):
+        for line in self:
+            total = line.price_unit * line.quantity
+            line.discount_amount = total * line.new_discount / 100 if total else 0.0
+
+    @api.onchange('discount_amount')
+    def _onchange_discount_amount(self):
+        for line in self:
+            total = line.price_unit * line.quantity
+            line.new_discount = (line.discount_amount / total) * 100 if total else 0.0
     # @api.onchange('price_unit')
     # def onchange_price_unit(self):
     #     for line in self:
@@ -123,6 +139,33 @@ class AccountReimbursementLine(models.Model):
     #             line.new_discount = ((line.product_id.list_price - line.price_unit) / line.product_id.list_price) * 100
     #         else:
     #             line.new_discount = 0.0
+    @api.depends('product_id', 'company_id', 'display_type')
+    def _compute_tax_ids(self):
+        for line in self:
+            if line.display_type in ('line_section', 'line_note', 'payment_term'):
+                continue
+            # keep taxes typed by hand when there is no product
+            if line.product_id or not line.tax_ids:
+                line.tax_ids = line._get_computed_taxes()
+
+    def _get_computed_taxes(self):
+        """Same logic as the quotation / invoice line: product sale taxes of
+        the company (or its closest parent), then the fiscal position."""
+        self.ensure_one()
+        taxes = self.product_id.taxes_id
+        if not taxes and self.account_id.tax_ids:
+            taxes = self.account_id.tax_ids
+        company = self.company_id or self.move_id.company_id
+        if taxes and company:
+            if hasattr(taxes, '_filter_taxes_by_company'):
+                taxes = taxes._filter_taxes_by_company(company)
+            else:
+                taxes = taxes.filtered(lambda t: t.company_id in company.parent_ids)
+        fpos = self.move_id.fiscal_position_id
+        if taxes and fpos:
+            taxes = fpos.map_tax(taxes)
+        return taxes
+
     @api.depends('quantity', 'discount','new_discount', 'price_unit', 'tax_ids', 'currency_id')
     def _compute_totals(self):
         """ Compute 'price_subtotal' / 'price_total' outside of `_sync_tax_lines` because those values must be visible for the

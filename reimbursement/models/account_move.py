@@ -742,7 +742,8 @@ class AccountMove(models.Model):
         'line_ids.payment_id.state',
         'line_ids.full_reconcile_id',
         'state',
-        'company_id', 'account_reimbursement_line_ids', 'is_reimbursement')
+        'company_id', 'account_reimbursement_line_ids', 'is_reimbursement',
+        'account_reimbursement_line_ids.price_subtotal', 'account_reimbursement_line_ids.price_total')
     def _compute_amount(self):
         super()._compute_amount()
         for rec in self:
