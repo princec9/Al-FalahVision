@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- LIST VIEW -->
+        <record id="sale_report_view_tree_line_salesperson" model="ir.ui.view">
+            <field name="name">sale.report.list.line.salesperson</field>
+            <field name="model">sale.report</field>
+            <field name="inherit_id" ref="sale.sale_report_view_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='user_id']" position="before">
+                    <field name="order_salesperson_partner_id" optional="show"/>
+                </xpath>
+                <xpath expr="//field[@name='user_id']" position="attributes">
+                    <attribute name="column_invisible">1</attribute>
+                </xpath>
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="salesperson_partner_id" optional="show"/>
+                    <field name="brand_id" optional="show"/>
+                    <field name="warehouse_code" optional="show"/>
+                </xpath>
+                <xpath expr="//field[@name='price_unit']" position="after">
+                    <field name="down_payment_amount" optional="show" sum="Total"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- SEARCH VIEW -->
+        <record id="view_order_product_search_line_salesperson" model="ir.ui.view">
+            <field name="name">sale.report.search.line.salesperson</field>
+            <field name="model">sale.report</field>
+            <field name="inherit_id" ref="sale.view_order_product_search"/>
+            <field name="arch" type="xml">
+                <xpath expr="//search" position="inside">
+                    <field name="order_salesperson_partner_id"/>
+                    <field name="salesperson_partner_id"/>
+                    <field name="brand_id"/>
+                    <field name="warehouse_code"/>
+                </xpath>
+                <xpath expr="//filter[@name='User']" position="after">
+                    <filter string="Store in Charge" name="groupby_order_salesperson"
+                            context="{'group_by': 'order_salesperson_partner_id'}"/>
+                    <filter string="Line Sales Person" name="line_user_group"
+                            context="{'group_by': 'salesperson_partner_id'}"/>
+                    <filter string="Brand" name="groupby_brand"
+                            context="{'group_by': 'brand_id'}"/>
+                    <filter string="Location" name="groupby_warehouse_code"
+                            context="{'group_by': 'warehouse_code'}"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
