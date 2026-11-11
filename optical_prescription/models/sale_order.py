@@ -2195,39 +2195,3 @@ class SaleOrderLine(models.Model):
                 ) % limit,
             }
         }
-class SaleReport(models.Model):
-    _inherit = 'sale.report'
-
-    line_user_id = fields.Many2one(
-        'res.users',
-        string='Sales Staff',
-        readonly=True,
-    )
-    brand_id = fields.Many2one(
-        'product.brand',  # change to your brand model name
-        string='Brand',
-        readonly=True,
-    )
-    warehouse_code = fields.Char(
-        string='Location',
-        readonly=True,
-    )
-
-    def _select_additional_fields(self):
-        res = super()._select_additional_fields()
-        res['line_user_id'] = "l.user_id"
-        res['brand_id'] = "t.brand_id"
-        res['warehouse_code'] = "sale_wh.code"
-        return res
-
-    def _from_sale(self):
-        res = super()._from_sale()
-        res += " LEFT JOIN stock_warehouse sale_wh ON sale_wh.id = s.warehouse_id"
-        return res
-
-    def _group_by_sale(self):
-        res = super()._group_by_sale()
-        res += ", l.user_id, t.brand_id, sale_wh.code"
-        return res
-
-
