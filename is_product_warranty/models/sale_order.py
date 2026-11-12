@@ -113,7 +113,7 @@ class SaleOrder(models.Model):
                         })
                         _logger.info("Warranty created for: %s", product.name)
 
-            order._warranty_create_purchase_order()
+            # order._warranty_create_purchase_order()
 
         return res
 

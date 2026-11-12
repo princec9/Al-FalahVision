@@ -99,4 +99,18 @@ class PurchaseOrderLine(models.Model):
 
     # Line specific info
     serial_number = fields.Char(string="Serial Number")
-    
+    discount_amount = fields.Monetary(
+        string="Discount Amount",
+        currency_field='currency_id',
+    )
+
+    @api.onchange('discount_amount')
+    def _onchange_discount_amount(self):
+        for line in self:
+            gross = line.product_qty * line.price_unit
+            line.discount = (line.discount_amount / gross * 100.0) if gross else 0.0
+
+    @api.onchange('discount', 'product_qty', 'price_unit')
+    def _onchange_discount_percent(self):
+        for line in self:
+            line.discount_amount = line.product_qty * line.price_unit * line.discount / 100.0
