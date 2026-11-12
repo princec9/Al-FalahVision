@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- light default pivot (already working) -->
+    <record id="quant_pivot_light_default" model="ir.ui.view">
+        <field name="name">stock.quant.pivot.light.default</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_pivot"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="attributes">
+                <attribute name="name">product_categ_id</attribute>
+            </xpath>
+            <xpath expr="//field[@name='location_id']" position="replace"/>
+        </field>
+    </record>
+
+    <!-- brand + sales price search and group by -->
+    <record id="quant_search_view_brand_price" model="ir.ui.view">
+        <field name="name">stock.quant.search.brand.price</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.quant_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='product_id']" position="after">
+                <field name="brand_id"/>
+                <field name="list_price" string="Sales Price from"
+                       filter_domain="[('product_tmpl_id.list_price', '&gt;=', raw_value)]"/>
+                <field name="list_price" string="Sales Price up to"
+                       filter_domain="[('product_tmpl_id.list_price', '&lt;=', raw_value)]"/>
+            </xpath>
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="groupby_brand" string="Brand"
+                        context="{'group_by': 'brand_id'}"/>
+                <filter name="groupby_list_price" string="Sales Price"
+                        context="{'group_by': 'list_price'}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
