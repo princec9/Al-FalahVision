@@ -1038,6 +1038,7 @@ class SaleOrderLine(models.Model):
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Salesperson",
+        required=True
     )
 
     def action_open_fitting_parameters(self):
@@ -1073,6 +1074,7 @@ class SaleOrderLine(models.Model):
     @api.depends(
         "product_uom_qty",
         "qty_invoiced",
+        "qty_delivered",
         "state",
         "parent_line_id",
         "parent_line_id.is_lab_order",
@@ -1082,6 +1084,15 @@ class SaleOrderLine(models.Model):
         super()._compute_qty_to_invoice()
 
         for line in self:
+            # Lab parent (container) line: never invoiced, nothing to invoice
+            if (
+                    line.is_lab_order
+                    and not line.parent_line_id
+                    and not line.display_type
+            ):
+                line.qty_to_invoice = 0.0
+                continue
+
             if (
                     line.parent_line_id
                     and line.parent_line_id.is_lab_order
@@ -1091,6 +1102,29 @@ class SaleOrderLine(models.Model):
                     line.product_uom_qty - line.qty_invoiced,
                     0.0,
                 )
+
+
+    @api.depends(
+        "state",
+        "product_uom_qty",
+        "qty_delivered",
+        "qty_to_invoice",
+        "qty_invoiced",
+        "is_lab_order",
+        "parent_line_id",
+    )
+    def _compute_invoice_status(self):
+        super()._compute_invoice_status()
+        for line in self:
+            if (
+                    line.state == "sale"
+                    and line.is_lab_order
+                    and not line.parent_line_id
+                    and not line.display_type
+            ):
+                line.invoice_status = "invoiced"
+
+
 
     def _prepare_invoice_line(self, **optional_values):
         self.ensure_one()

@@ -384,7 +384,7 @@
 
                 </xpath>
 
-                <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="before">
+                <xpath expr="//field[@name='order_line']/list//field[@name='product_template_id']" position="after">
                     <widget name="add_component_button"
                             invisible="parent_line_id != False"/>
                     <widget name="fitting_parameters_button"

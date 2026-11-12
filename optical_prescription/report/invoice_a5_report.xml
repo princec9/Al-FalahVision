@@ -52,7 +52,18 @@
             <field name="binding_model_id" ref="account.model_account_move"/>
             <field name="binding_type">report</field>
         </record>
-        <record id="action_report_invoice_a5_so" model="ir.actions.report">
+        <record id="action_report_prescription_a5" model="ir.actions.report">
+            <field name="name">Prescription (with Company Details)</field>
+            <field name="model">prescription.records</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">optical_prescription.report_prescription_a5_document</field>
+            <field name="report_file">optical_prescription.report_prescription_a5_document</field>
+            <field name="print_report_name">'Prescription - ' + (object.partner_id.name or '')</field>
+            <field name="paperformat_id" ref="paperformat_invoice_a5"/>
+            <field name="binding_model_id" ref="optical_prescription.model_prescription_records"/>
+            <field name="binding_type">report</field>
+        </record>
+         <record id="action_report_invoice_a5_so" model="ir.actions.report">
             <field name="name">Down payment Bill(A5)</field>
             <field name="model">account.move</field>
             <field name="report_type">qweb-pdf</field>

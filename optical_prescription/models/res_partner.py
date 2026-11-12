@@ -1,6 +1,6 @@
 import re
 from odoo import models, fields, api, _
-from odoo.osv import expression
+from odoo.fields import Domain
 
 
 class ResPartner(models.Model):
@@ -14,67 +14,29 @@ class ResPartner(models.Model):
     is_optometrist_person = fields.Boolean(string="Optometrist")
     is_technician = fields.Boolean(string="Is Technician")
     # reference_company = fields.Char("Company")
+    phone_digits = fields.Char(
+        string="Phone (digits only)",
+        compute='_compute_phone_digits',
+        store=True,
+        index='trigram',
+    )
     _rec_names_search = ['complete_name', 'email', 'phone', 'ref', 'vat', 'company_registry',
-                         'emp_personal']  # TODO vat must be sanitized the same way for storing/searching
+                         'emp_personal', 'phone_digits']  # TODO vat must be sanitized the same way for storing/searching
 
-    def _name_search(self, name, domain=None, operator='ilike', limit=None, order=None,
-                     active_test=True):
-        """Extend partner search so that typing a phone/mobile number (or part
-        of it) also matches, in addition to the standard name/email/vat search.
+    @api.depends('phone')
+    def _compute_phone_digits(self):
+        for rec in self:
+            rec.phone_digits = re.sub(r'\D', '', rec.phone or '')
 
-        This affects every many2one/name_search based widget that points to
-        res.partner, including Sale Order > Customer (partner_id),
-        Invoice > Customer, POS customer selector, etc.
-        """
-        domain = domain or []
-
-        if name:
-            # Build the "normal" search Odoo would have done (name, email, etc.)
-            base_domain = self._get_name_search_domain(name, operator)
-
-            # Also try to match against phone/mobile.
-            # Strip everything except digits so that formatting
-            # (+91, spaces, dashes, parentheses) doesn't break the match.
-            digits_only = re.sub(r'\D', '', name)
-
-            phone_domain = []
-            if digits_only:
-                # Search using both the raw text (in case ilike still works,
-                # e.g. numbers stored without formatting) and the digits-only
-                # version against phone and mobile.
-                phone_domain = expression.OR([
-                    [('phone', operator, name)],
-                    [('mobile', operator, name)],
-                    [('phone', operator, digits_only)],
-                    [('mobile', operator, digits_only)],
-                ])
-            else:
-                phone_domain = expression.OR([
-                    [('phone', operator, name)],
-                    [('mobile', operator, name)],
-                ])
-
-            search_domain = expression.OR([base_domain, phone_domain])
-            domain = expression.AND([domain, search_domain])
-
-            return self._search(domain, limit=limit, order=order)
-
-        return super()._name_search(name, domain, operator, limit, order)
-
-    def _get_name_search_domain(self, name, operator):
-        """Recreate the default name/email/vat/ref search domain that
-        Odoo's res.partner._name_search normally builds, so we don't lose
-        that behaviour while adding phone/mobile matching.
-
-        Kept as a separate method so it's easy to extend later
-        (e.g. add 'ref' or 'vat' fields) without touching the main method.
-        """
-        return expression.OR([
-            [('name', operator, name)],
-            [('email', operator, name)],
-            [('ref', operator, name)],
-            [('vat', operator, name)],
-        ])
+    def _search_display_name(self, operator, value):
+        domain = super()._search_display_name(operator, value)
+        if operator in ('ilike', 'like', '=ilike') and value:
+            # only treat the text as a phone number if it looks like one
+            if re.fullmatch(r'[\d\s+\-().]+', value.strip()):
+                digits = re.sub(r'\D', '', value)
+                if len(digits) >= 3:
+                    domain = Domain(domain) | Domain('phone_digits', 'ilike', digits)
+        return domain
 
     @api.depends('name', 'company_id')
     def _compute_prescription_count(self):
@@ -96,3 +58,14 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     facility_number = fields.Char(string="DHA Facility Number")
+
+
+class CrmLead(models.Model):
+    _inherit = 'crm.lead'
+
+    def _prepare_opportunity_quotation_context(self):
+        ctx = super()._prepare_opportunity_quotation_context()
+        partner = self.user_id.partner_id
+        if partner:
+            ctx['default_salesperson_partner_id'] = partner.id
+        return ctx
