@@ -1038,7 +1038,6 @@ class SaleOrderLine(models.Model):
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Salesperson",
-        required=True
     )
 
     def action_open_fitting_parameters(self):

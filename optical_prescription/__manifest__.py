@@ -29,7 +29,7 @@ NOTE:
 This module depends on Optical Prescription Base module.
     """,
 
-    "version": "19.0.1.0.6",
+    "version": "19.0.1.0.7",
 
     "author": "",
     "website": "",
