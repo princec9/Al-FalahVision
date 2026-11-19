@@ -62,7 +62,9 @@
                 <group>
                     <field name="invoice_id"/>
                     <field name="amount"/>
+                    <field name="payment_journal_id" options="{'no_create': True, 'no_open': True}"/>
                     <field name="currency_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
                 </group>
 
                 <footer>
@@ -84,6 +86,17 @@
 
         </field>
     </record>
+
+    <record id="view_account_journal_form_inherit_expense" model="ir.ui.view">
+    <field name="name">account.journal.form.inherit.expense</field>
+    <field name="model">account.journal</field>
+    <field name="inherit_id" ref="account.view_account_journal_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='code']" position="after">
+            <field name="is_expense_journal"/>
+        </xpath>
+    </field>
+</record>
 
 <record id="view_move_form_inherit_claim" model="ir.ui.view">
     <field name="name">account.move.form.claim</field>

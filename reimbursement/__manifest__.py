@@ -4,7 +4,7 @@
     'summary': "Account Reimbursement",
     'author': "ANAND MC",
     'category': 'Accounting',
-    'version': '1.1',
+    'version': '1.2',
     'depends': ['base','contacts','account','accountant'],
     'data': [
         'security/ir.model.access.csv',

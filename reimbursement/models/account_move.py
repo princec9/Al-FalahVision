@@ -37,6 +37,18 @@ class InvoiceExpenseWizard(models.TransientModel):
         currency_field="currency_id",
     )
 
+    company_id = fields.Many2one(
+        related="invoice_id.company_id",
+        readonly=True,
+    )
+
+    payment_journal_id = fields.Many2one(
+        "account.journal",
+        string="Paid From",
+        required=True,
+        domain="[('is_expense_journal', '=', True), ('company_id', '=', company_id)]",
+    )
+
     currency_id = fields.Many2one(
         related="invoice_id.currency_id",
         readonly=True,
@@ -104,18 +116,23 @@ class InvoiceExpenseWizard(models.TransientModel):
                 _("The configured Expense Account does not exist.")
             )
 
-        # Get the journal's default account
-        default_account = journal.default_account_id
+        # ------------------------------------------------------------
+        # CHANGED: credit account comes from the journal chosen in the
+        # wizard ("Paid From"), not from the Expense Journal's default
+        # account.
+        # ------------------------------------------------------------
+        if not self.payment_journal_id:
+            raise UserError(_("Please select the 'Paid From' journal."))
+
+        default_account = self.payment_journal_id.default_account_id
 
         if not default_account:
             raise UserError(
-                _(
-                    "Please configure a Default Account on the selected "
-                    "Expense Journal."
-                )
+                _("The selected journal '%s' has no Journal Account configured.")
+                % self.payment_journal_id.display_name
             )
 
-        # Create Journal Entry
+        # Create Journal Entry (still created in the Expense Journal)
         expense_move = self.env["account.move"].create({
             "move_type": "entry",
             "journal_id": journal.id,
@@ -538,7 +555,7 @@ class AccountMove(models.Model):
 
         journal = self.env["account.journal"].search([
             ("type", "=", "general"),
-            ("is_insurance", "=", True),
+            ("company_id", "=", self.company_id.id),
         ], limit=1)
 
         if not journal:
@@ -763,3 +780,13 @@ class AccountMove(models.Model):
 
         for rec in self:
             rec.is_reimbursement = True
+
+
+class AccountJournal(models.Model):
+    _inherit = "account.journal"
+
+    is_expense_journal = fields.Boolean(
+        string="Use for Expenses",
+        help="If checked, this journal can be selected as 'Paid From' "
+             "in the Create Expense wizard.",
+    )
