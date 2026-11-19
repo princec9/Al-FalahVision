@@ -31,8 +31,11 @@ _logger = logging.getLogger(__name__)
 INVOICE_TYPES = ('out_invoice', 'out_refund')
 
 
-def _refresh_commission_report(env):
-    """Rebuild Commission by Sales Person; never fail the invoice because of it."""
+def _refresh_commission_report(env, moves=None):
+    if env.context.get('import_file') or env.context.get('skip_commission_refresh'):
+        return
+    if moves is not None and not any(m.move_type in INVOICE_TYPES for m in moves):
+        return
     try:
         with env.cr.savepoint():
             env['sale.commission.partner.report']._ensure_fresh(force=True)
@@ -83,23 +86,22 @@ class AccountMove(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if {'salesperson_partner_id', 'invoice_date', 'state'} & set(vals):
-            _refresh_commission_report(self.env)
+            _refresh_commission_report(self.env, self)
         return res
 
     def _post(self, soft=True):
         posted = super()._post(soft=soft)
-        if any(m.move_type in INVOICE_TYPES for m in posted):
-            _refresh_commission_report(self.env)
+        _refresh_commission_report(self.env, posted)
         return posted
 
     def button_draft(self):
         res = super().button_draft()
-        _refresh_commission_report(self.env)
+        _refresh_commission_report(self.env, self)
         return res
 
     def button_cancel(self):
         res = super().button_cancel()
-        _refresh_commission_report(self.env)
+        _refresh_commission_report(self.env, self)
         return res
 
 
@@ -135,5 +137,5 @@ class AccountMoveLine(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if 'salesperson_partner_id' in vals:
-            _refresh_commission_report(self.env)
+            _refresh_commission_report(self.env, self.move_id)
         return res

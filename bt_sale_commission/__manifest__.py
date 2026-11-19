@@ -67,7 +67,7 @@ Achievements by Sales Person. The native Commission and Achievements report
 menus are re-pointed to them (disable with system parameter
 bt_sale_commission.repoint_native_report = 0).
     """,
-    "version": "19.0.2.4.2",
+    "version": "19.0.2.4.3",
     "category": "Sales/CRM",
     "author": "BroadTech IT Solutions Pvt Ltd",
     "license": "LGPL-3",
@@ -76,6 +76,7 @@ bt_sale_commission.repoint_native_report = 0).
         "security/ir.model.access.csv",
         "views/sale_commission_plan_views.xml",
         "views/sale_order_views.xml",
+        "views/crm_lead_views.xml",
         "views/account_move_views.xml",
         "views/sale_commission_report_views.xml",
         "views/sale_commission_achievement_views.xml",

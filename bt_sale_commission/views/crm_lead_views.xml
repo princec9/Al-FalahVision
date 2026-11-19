@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Quick create card (kanban): its own row with an icon, like the others -->
+    <record id="quick_create_opportunity_form_emarates_id" model="ir.ui.view">
+        <field name="name">crm.lead.quick.create.emarates.id</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.quick_create_opportunity_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone']/parent::div" position="after">
+                <div class="d-flex align-items-center" colspan="2">
+                    <i class="fa fa-id-card" title="Emirates ID"/>
+                    <field name="emarates_id" string="Emirates ID" placeholder="Emirates ID"
+                           nolabel="1" class="o_field_highlight w-100 mb-0"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Full form: opportunity block (after the phone row) and lead block -->
+    <record id="crm_lead_view_form_emarates_id" model="ir.ui.view">
+        <field name="name">crm.lead.form.emarates.id</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone' and not(@id)]/parent::div" position="after">
+                <field name="emarates_id"/>
+            </xpath>
+            <xpath expr="//field[@id='phone_group_lead_info']/parent::div" position="after">
+                <field name="emarates_id" id="emarates_id_group_lead_info"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
