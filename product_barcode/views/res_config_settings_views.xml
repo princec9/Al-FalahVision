@@ -49,28 +49,29 @@
                 ^XA
                 ^CI28
                 ^MNY
+                ^MD-10
                 ^PW520
                 ^LL150
                 ^LH0,0
 
-                ^FO20,20
-                ^BY1,2,55
-                ^BCN,55,N,N,N
+                ^FO20,35
+                ^BY2,2,50
+                ^BCN,50,N,N,N,A
                 ^FD<t t-out="product.barcode or ''"/>^FS
 
-                ^FO20,78
-                ^A0N,21,18
+                ^FO25,90
+                ^A0N,22,18
                 ^FB160,1,0,C,0
-                ^FD<t t-out="product.barcode or ''"/>^FS
+                ^FD<t t-out="product.default_code or product.barcode or ''"/>^FS
 
-                ^FO300,30
-                ^A0N,21,18
-                ^FB210,3,2,L,0
+                ^FO310,40
+                ^A0N,19,16
+                ^FB200,3,2,L,0
                 ^FD<t t-out="(product.display_name or '')[:38]"/>^FS
 
-                ^FO300,100
+                ^FO310,100
                 ^A0N,23,20
-                ^FDAED:<t t-out="'%.2f' % product.list_price"/>^FS
+                ^FDAED: <t t-out="'%.2f' % product.list_price"/>^FS
 
                 ^XZ
             </t>

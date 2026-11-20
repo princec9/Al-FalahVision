@@ -32,10 +32,8 @@
                         <t t-set="partner" t-value="o.partner_id"/>
 
                         <t t-set="so_ids" t-value="o.invoice_line_ids.sale_line_ids.order_id.ids"/>
-                        <t t-set="rx_so"
-                           t-value="env['prescription.records'].sudo().search([('order_id', 'in', so_ids)], order='create_date desc', limit=1)"/>
-                        <t t-set="rx_inv"
-                           t-value="env['prescription.records'].sudo().search([('res_model', '=', 'account.move'), ('line_res_id', '=', o.id)], order='create_date desc', limit=1)"/>
+                        <t t-set="rx_so" t-value="env['prescription.records'].sudo().search([('order_id', 'in', so_ids)], order='create_date desc', limit=1)"/>
+                        <t t-set="rx_inv" t-value="env['prescription.records'].sudo().search([('res_model', '=', 'account.move'), ('line_res_id', '=', o.id)], order='create_date desc', limit=1)"/>
                         <t t-set="rx" t-value="rx_so or rx_inv"/>
 
                         <!-- ===== PAYMENTS made against THIS invoice (amounts as applied to this invoice) ===== -->
@@ -49,13 +47,11 @@
                         <t t-set="advance" t-value="o.amount_total - o.amount_residual"/>
 
                         <!-- ===== LINES: split real products from the down payment deduction ===== -->
-                        <t t-set="all_lines"
-                           t-value="o.invoice_line_ids.filtered(lambda x: x.display_type == 'product')"/>
+                        <t t-set="all_lines" t-value="o.invoice_line_ids.filtered(lambda x: x.display_type == 'product')"/>
                         <!-- Deduction line = negative line linked to a down payment SO line,
                              or (fallback) a negative line whose label starts with "Down Payment".
                              The down payment invoice itself keeps its positive line. -->
-                        <t t-set="dp_lines"
-                           t-value="all_lines.filtered(lambda x: x.price_total &lt; 0 and (any(s.is_downpayment for s in x.sale_line_ids) or (x.name or '').strip().lower().startswith('down payment')))"/>
+                        <t t-set="dp_lines" t-value="all_lines.filtered(lambda x: x.price_total &lt; 0 and (any(s.is_downpayment for s in x.sale_line_ids) or (x.name or '').strip().lower().startswith('down payment')))"/>
                         <t t-set="inv_lines" t-value="all_lines - dp_lines"/>
 
                         <!-- Down payment shown as a POSITIVE amount, taken from price_subtotal (excl. tax) -->
@@ -64,8 +60,7 @@
                         <t t-set="dp_amount_incl" t-value="-sum(dp_lines.mapped('price_total'))"/>
 
                         <!-- ===== TOTALS EXCLUDING THE DOWN PAYMENT LINE ===== -->
-                        <t t-set="disc_total"
-                           t-value="sum(x.quantity * x.price_unit * x.discount / 100 for x in inv_lines)"/>
+                        <t t-set="disc_total" t-value="sum(x.quantity * x.price_unit * x.discount / 100 for x in inv_lines)"/>
                         <t t-set="untaxed_total" t-value="sum(inv_lines.mapped('price_subtotal'))"/>
                         <t t-set="grand_total" t-value="sum(inv_lines.mapped('price_total'))"/>
                         <t t-set="tax_total" t-value="grand_total - untaxed_total"/>
@@ -74,8 +69,7 @@
                         <t t-set="sub_total" t-value="untaxed_total + disc_total"/>
                         <!-- Net payable after the down payment is deducted (equals the invoice total in Odoo) -->
                         <t t-set="net_total" t-value="grand_total - dp_amount_incl"/>
-                        <t t-set="tax_pcts"
-                           t-value="', '.join(sorted(set('{:g}'.format(t.amount) for t in inv_lines.mapped('tax_ids'))))"/>
+                        <t t-set="tax_pcts" t-value="', '.join(sorted(set('{:g}'.format(t.amount) for t in inv_lines.mapped('tax_ids'))))"/>
 
                         <!-- ===== PAGE SETTINGS (mm of the layout, not of the paper) ===== -->
                         <t t-set="page_h" t-value="104"/>
@@ -90,10 +84,8 @@
                             <t t-set="partner" t-value="o.partner_id"/>
 
                             <t t-set="so_ids" t-value="o.invoice_line_ids.sale_line_ids.order_id.ids"/>
-                            <t t-set="rx_so"
-                               t-value="env['prescription.records'].sudo().search([('order_id', 'in', so_ids)], order='create_date desc', limit=1)"/>
-                            <t t-set="rx_inv"
-                               t-value="env['prescription.records'].sudo().search([('res_model', '=', 'account.move'), ('line_res_id', '=', o.id)], order='create_date desc', limit=1)"/>
+                            <t t-set="rx_so" t-value="env['prescription.records'].sudo().search([('order_id', 'in', so_ids)], order='create_date desc', limit=1)"/>
+                            <t t-set="rx_inv" t-value="env['prescription.records'].sudo().search([('res_model', '=', 'account.move'), ('line_res_id', '=', o.id)], order='create_date desc', limit=1)"/>
                             <t t-set="rx" t-value="rx_so or rx_inv"/>
 
                             <!-- Advance = what has already been paid against this invoice -->
@@ -105,20 +97,15 @@
                             <t t-set="pay_lines" t-value="(pay_widget.get('content') or []) if pay_widget else []"/>
                             <t t-set="pref_method" t-value="o.preferred_payment_method_line_id"/>
 
-                            <t t-set="inv_lines"
-                               t-value="o.invoice_line_ids.filtered(lambda x: x.display_type == 'product')"/>
-                            <t t-set="disc_total"
-                               t-value="sum(x.quantity * x.price_unit * x.discount / 100 for x in inv_lines)"/>
+                            <t t-set="inv_lines" t-value="o.invoice_line_ids.filtered(lambda x: x.display_type == 'product')"/>
+                            <t t-set="disc_total" t-value="sum(x.quantity * x.price_unit * x.discount / 100 for x in inv_lines)"/>
                             <t t-set="sub_total" t-value="o.amount_total + disc_total"/>
-                            <t t-set="tax_pcts"
-                               t-value="', '.join(sorted(set('%g' % t.amount for t in inv_lines.mapped('tax_ids'))))"/>
+                            <t t-set="tax_pcts" t-value="', '.join(sorted(set('%g' % t.amount for t in inv_lines.mapped('tax_ids'))))"/>
 
                             <!-- ================= COMPANY DETAILS ================= -->
                             <t t-set="c" t-value="o.company_id.partner_id"/>
-                            <div class="inv-co"
-                                 style="position:absolute; top:2mm; right:6mm; width:110mm; text-align:right;">
-                                <div t-if="o.company_id.x_arabic_name" dir="rtl"
-                                     style="font-size:3.3mm; line-height:1.15; text-align:right;">
+                            <div class="inv-co" style="position:absolute; top:2mm; right:6mm; width:110mm; text-align:right;">
+                                <div t-if="o.company_id.x_arabic_name" dir="rtl" style="font-size:3.3mm; line-height:1.15; text-align:right;">
                                     <b t-out="o.company_id.x_arabic_name"/>
                                 </div>
                                 <div class="inv-co-name">
@@ -141,17 +128,13 @@
 
                                 <!-- LEFT: customer -->
                                 <div style="position:absolute; top:0; left:0; width:36%;">
-                                    <t t-set="addr"
-                                       t-value="partner if (partner.street or partner.city) else partner.commercial_partner_id"/>
+                                    <t t-set="addr" t-value="partner if (partner.street or partner.city) else partner.commercial_partner_id"/>
                                     <div class="inv-cust-name">
                                         <b t-out="partner.name"/>
                                     </div>
-                                    <div class="inv-cust" t-if="partner.parent_id and partner.parent_id.name"
-                                         t-out="partner.parent_id.name"/>
-                                    <div class="inv-cust" t-if="addr.street or addr.street2"
-                                         t-out="', '.join([x for x in [addr.street, addr.street2] if x])"/>
-                                    <div class="inv-cust" t-if="addr.city or addr.state_id or addr.country_id"
-                                         t-out="', '.join([x for x in [addr.city, addr.state_id.name, addr.country_id.name] if x])"/>
+                                    <div class="inv-cust" t-if="partner.parent_id and partner.parent_id.name" t-out="partner.parent_id.name"/>
+                                    <div class="inv-cust" t-if="addr.street or addr.street2" t-out="', '.join([x for x in [addr.street, addr.street2] if x])"/>
+                                    <div class="inv-cust" t-if="addr.city or addr.state_id or addr.country_id" t-out="', '.join([x for x in [addr.city, addr.state_id.name, addr.country_id.name] if x])"/>
                                     <div class="inv-cust" t-if="partner.phone or partner.commercial_partner_id.phone">
                                         Phone:
                                         <span t-out="partner.phone or partner.commercial_partner_id.phone"/>
@@ -172,8 +155,7 @@
                                 </div>
 
                                 <!-- RIGHT: invoice no + date (plain text, no table) -->
-                                <div class="inv-title nowrap"
-                                     style="position:absolute; top:0; right:0; width:36%; text-align:right; line-height:1.3;">
+                                <div class="inv-title nowrap" style="position:absolute; top:0; right:0; width:36%; text-align:right; line-height:1.3;">
                                     <div>
                                         <b>Invoice No :
                                             <span t-out="o.name"/>
@@ -181,8 +163,7 @@
                                     </div>
                                     <div>
                                         <b>Date :</b>
-                                        <span t-out="o.invoice_date"
-                                              t-options="{&quot;widget&quot;: &quot;date&quot;, &quot;format&quot;: &quot;dd/MM/yyyy&quot;}"/>
+                                        <span t-out="o.invoice_date" t-options="{&quot;widget&quot;: &quot;date&quot;, &quot;format&quot;: &quot;dd/MM/yyyy&quot;}"/>
                                     </div>
                                     <div t-if="o.ref">
                                         <b>Reference :
@@ -195,8 +176,7 @@
 
                             <!-- ================= PRODUCT INFORMATION ================= -->
                             <div class="inv-abs" t-attf-style="top:#{prod_top}mm; height:#{prod_h}mm; overflow:hidden;">
-                                <table class="inv-prod"
-                                       style="width:100%; border:none; border-collapse:collapse; table-layout:fixed;">
+                                <table class="inv-prod" style="width:100%; border:none; border-collapse:collapse; table-layout:fixed;">
                                     <colgroup>
                                         <col style="width:33%;"/>
                                         <col style="width:11%;"/>
@@ -231,8 +211,7 @@
                                             </th>
                                         </tr>
                                         <tr>
-                                            <td colspan="7"
-                                                style="padding:0; height:0.3mm; line-height:0.3mm; font-size:0.3mm; background-color:#000;"></td>
+                                            <td colspan="7" style="padding:0; height:0.3mm; line-height:0.3mm; font-size:0.3mm; background-color:#000;"/>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -252,7 +231,7 @@
                                                     <span t-out="'%.2f' % l.discount"/>
                                                 </td>
                                                 <td class="nowrap" style="text-align:right; padding-left:1mm;">
-                                                    <span t-out="', '.join(['%g%%' % x for x in l.tax_ids.mapped('amount')])"/>
+                                                    <span t-out="', '.join(['%g%' % x for x in l.tax_ids.mapped('amount')])"/>
                                                 </td>
                                                 <td class="nowrap" style="text-align:right; padding-left:1mm;">
                                                     <span t-out="'{:,.2f}'.format(l.price_total - l.price_subtotal)"/>
@@ -278,8 +257,7 @@
 
                                         <!-- LEFT: Prescription -->
                                         <td style="vertical-align:top; padding-right:3mm; border:none;">
-                                            <table class="inv-rx"
-                                                   style="width:100%; border-collapse:collapse; table-layout:fixed; text-align:center;">
+                                            <table class="inv-rx" style="width:100%; border-collapse:collapse; table-layout:fixed; text-align:center;">
                                                 <colgroup>
                                                     <col style="width:10%;"/>
                                                     <col style="width:18%;"/>
@@ -364,8 +342,7 @@
                                             </div>
                                             <!-- amount in words -->
                                             <t t-set="cur_unit" t-value="o.currency_id.currency_unit_label or ''"/>
-                                            <t t-set="amt_words"
-                                               t-value="o.currency_id.amount_to_text(o.amount_total)"/>
+                                            <t t-set="amt_words" t-value="o.currency_id.amount_to_text(o.amount_total)"/>
                                             <div class="inv-words" style="margin-top:1mm;">
                                                 <span t-out="(amt_words.replace(' ' + cur_unit, '') if cur_unit else amt_words) + ' Only'"/>
                                             </div>
@@ -373,8 +350,7 @@
 
                                         <!-- RIGHT: Totals -->
                                         <td style="vertical-align:top; border:none;">
-                                            <table class="inv-tot"
-                                                   style="width:100%; border-collapse:collapse; table-layout:fixed; border:none;">
+                                            <table class="inv-tot" style="width:100%; border-collapse:collapse; table-layout:fixed; border:none;">
                                                 <colgroup>
                                                     <col style="width:58%;"/>
                                                     <col style="width:42%;"/>
@@ -384,8 +360,7 @@
                                                     <td style="text-align:right; padding-right:2mm; border-top:0.3mm solid #000;">
                                                         <b>Sub Total :</b>
                                                     </td>
-                                                    <td class="nowrap"
-                                                        style="text-align:right; border-top:0.3mm solid #000;">
+                                                    <td class="nowrap" style="text-align:right; border-top:0.3mm solid #000;">
                                                         <span t-out="'{:,.2f}'.format(sub_total)"/>
                                                     </td>
                                                 </tr>
@@ -421,8 +396,7 @@
                                                     <td style="text-align:right; padding-right:2mm; border-top:0.3mm solid #000;">
                                                         <b>Grand Total :</b>
                                                     </td>
-                                                    <td class="nowrap"
-                                                        style="text-align:right; border-top:0.3mm solid #000;">
+                                                    <td class="nowrap" style="text-align:right; border-top:0.3mm solid #000;">
                                                         <b>
                                                             <span t-out="'{:,.2f}'.format(grand_total)"/>
                                                         </b>
