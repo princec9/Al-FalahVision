@@ -166,6 +166,37 @@ class AccountReimbursementLine(models.Model):
             taxes = fpos.map_tax(taxes)
         return taxes
 
+    @api.onchange('discount')
+    def _onchange_discount(self):
+        for line in self:
+            total = line.price_unit * line.quantity
+            line.discount_amount = total * line.discount / 100 if total else 0.0
+
+
+    @api.onchange('discount_amount')
+    def _onchange_discount_amount(self):
+        for line in self:
+            total = line.price_unit * line.quantity
+            line.discount = (
+                (line.discount_amount / total) * 100
+                if total else 0.0
+            )
+
+
+    @api.onchange('price_unit', 'quantity')
+    def _onchange_price_quantity(self):
+        for line in self:
+            total = line.price_unit * line.quantity
+            line.discount_amount = total * line.discount / 100 if total else 0.0
+
+    # @api.onchange('price_unit')
+    # def onchange_price_unit(self):
+    #     for line in self:
+    #         # Update discount based on list price
+    #         if line.product_id.list_price > 0:
+    #             line.new_discount = ((line.product_id.list_price - line.price_unit) / line.product_id.list_price) * 100
+    #         else:
+    #             line.new_discount = 0.0
     @api.depends('quantity', 'discount','new_discount', 'price_unit', 'tax_ids', 'currency_id')
     def _compute_totals(self):
         """ Compute 'price_subtotal' / 'price_total' outside of `_sync_tax_lines` because those values must be visible for the
@@ -182,8 +213,8 @@ class AccountReimbursementLine(models.Model):
                 line,
                 price_unit=line.price_unit,
                 quantity=line.quantity,
-                discount=line.new_discount
-                # discount=line.discount,
+                #discount=line.discount,
+		discount=line.new_discount
             )
             AccountTax._add_tax_details_in_base_line(base_line, line.company_id)
             line.price_subtotal = base_line['tax_details']['raw_total_excluded_currency']

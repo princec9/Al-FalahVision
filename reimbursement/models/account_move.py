@@ -46,7 +46,7 @@ class InvoiceExpenseWizard(models.TransientModel):
         "account.journal",
         string="Paid From",
         required=True,
-        domain="[('is_expense_journal', '=', True), ('company_id', '=', company_id)]",
+        domain="[('is_expense_journal', '=', True)]",
     )
 
     currency_id = fields.Many2one(
@@ -132,10 +132,10 @@ class InvoiceExpenseWizard(models.TransientModel):
                 % self.payment_journal_id.display_name
             )
 
-        # Create Journal Entry (still created in the Expense Journal)
+        # Create Journal Entry
         expense_move = self.env["account.move"].create({
             "move_type": "entry",
-            "journal_id": journal.id,
+            "journal_id": self.payment_journal_id.id,
             "date": fields.Date.context_today(self),
             # "ref": _("Expense for Invoice %s") % invoice.name,
 
