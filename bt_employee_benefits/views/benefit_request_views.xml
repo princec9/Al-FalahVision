@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Form View — matches image exactly -->
+    <record id="benefit_request_view_form" model="ir.ui.view">
+        <field name="name">benefit.request.form</field>
+        <field name="model">benefit.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_validate"
+                            string="Validate"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'draft'"
+                            groups="bt_employee_benefits.group_benefit_manager"/>
+                    <button name="action_refuse"
+                            string="Refuse"
+                            type="object"
+                            invisible="state in ('draft','refuse')"/>
+                    <button name="action_reset_draft"
+                            string="Reset to Draft"
+                            type="object"
+                            invisible="state not in ('validate','refuse')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,validate"/>
+                </header>
+
+                <sheet>
+
+                    <!-- Title: "Benefit Type (X day(s))" -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"
+                                   placeholder="Benefit Request"/>
+                        </h1>
+                    </div>
+
+                    <!-- Two columns:
+                         Left  — Benefit Type + Allocation Type
+                         Right — Employee -->
+                    <group>
+                        <group>
+                            <field name="allowed_benefit_type_ids" invisible="1"/>
+                            <field name="holiday_status_id"
+                                   string="Benefit Type"/>
+                            <field name="allocation_id"
+                                   string="Allocation"
+                                   invisible="not holiday_status_id"/>
+                            <field name="allocation_remaining"
+                                   string="Remaining Balance"
+                                   invisible="not allocation_id"
+                                   widget="float"/>
+                            <field name="request_unit"
+                                   invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="employee_id"
+                                   string="Employee"
+                                   widget="many2one_avatar_employee"/>
+                            <field name="department_id"/>
+                        </group>
+                    </group>
+
+                    <!-- Validity Period: "Mar 23 → No Limit" -->
+                    <group>
+                        <group string="Validity Period" col="4">
+                            <field name="date_from"
+                                   nolabel="1"
+                                   widget="date"/>
+                            <span>→</span>
+                            <field name="date_to"
+                                   nolabel="1"
+                                   widget="date"
+                                   placeholder="No Limit"/>
+                        </group>
+                    </group>
+
+                    <!-- Allocation amount: "1.00  Days" -->
+                    <group>
+                        <group string="Allocation">
+                            <field name="number_of_days"
+                                   string="Allocation"
+                                   invisible="request_unit in ('hour','unit')"/>
+                            <field name="number_of_hours"
+                                   string="Allocation"
+                                   invisible="request_unit != 'hour'"/>
+                            <field name="number_of_units"
+                                   string="Allocation"
+                                   invisible="request_unit != 'unit'"/>
+                            <field name="duration_display"
+                                   string="Duration"
+                                   readonly="1"
+                                   invisible="1"/>
+                        </group>
+                    </group>
+
+                    <!-- "Add a reason..." description -->
+                    <field name="description"
+                           placeholder="Add a reason..."
+                           invisible="state == 'validate'"/>
+                    <field name="description"
+                           readonly="1"
+                           invisible="state != 'validate'"/>
+                    <field name="support_document" invisible="1"/>
+
+                    <group invisible="not support_document" string="Supporting Documents">
+                        <field name="attachment_ids"
+                               widget="many2many_binary"
+                               string="Attach Documents"/>
+                    </group>
+
+                    <!-- Refuse reason -->
+                    <group invisible="state != 'refuse'">
+                        <field name="refuse_reason"
+                               readonly="1"
+                               string="Refuse Reason"/>
+                    </group>
+
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="benefit_request_view_list" model="ir.ui.view">
+        <field name="name">benefit.request.list</field>
+        <field name="model">benefit.request</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'validate'"
+                  decoration-danger="state == 'refuse'"
+                  decoration-muted="state == 'draft'">
+                <field name="employee_id"
+                       widget="many2one_avatar_employee"/>
+                <field name="holiday_status_id"
+                       string="Benefit Type"/>
+                <field name="date_from" string="From"/>
+                <field name="date_to" string="To"/>
+                <field name="duration_display"
+                       string="Duration"/>
+                <field name="state" widget="badge"
+                       decoration-warning="state == 'draft'"
+                       decoration-success="state == 'validate'"
+                       decoration-danger="state == 'refuse'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="benefit_request_view_search" model="ir.ui.view">
+        <field name="name">benefit.request.search</field>
+        <field name="model">benefit.request</field>
+        <field name="arch" type="xml">
+            <search string="Search Benefit Requests">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="holiday_status_id"/>
+                <filter name="to_approve" string="To Approve"
+                        domain="[('state','=','draft')]"/>
+                <filter name="approved" string="Approved"
+                        domain="[('state','=','validate')]"/>
+                <filter name="refused" string="Refused"
+                        domain="[('state','=','refuse')]"/>
+                <separator/>
+                <filter name="my_requests" string="My Requests"
+                        domain="[('employee_id.user_id','=',uid)]"/>
+                <separator/>
+                <filter name="group_employee" string="Employee"
+                        context="{'group_by': 'employee_id'}"/>
+                <filter name="group_benefit" string="Benefit Type"
+                        context="{'group_by': 'holiday_status_id'}"/>
+                <filter name="group_state" string="Status"
+                        context="{'group_by': 'state'}"/>
+                <filter name="group_month" string="Month"
+                        context="{'group_by': 'date_from:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="benefit_request_action"
+            model="ir.actions.act_window">
+        <field name="name">Benefit Requests</field>
+        <field name="res_model">benefit.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id"
+               ref="benefit_request_view_search"/>
+        <field name="context">
+            {'search_default_my_requests': 1}
+        </field>
+    </record>
+
+</odoo>

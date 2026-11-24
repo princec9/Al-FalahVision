@@ -10,4 +10,5 @@ from . import sale_order_invoice
 from . import sale_commission_partner_report
 from . import ir_actions_act_window
 from . import sale_order_report
+from . import res_users
 from . import crm_lead

@@ -113,6 +113,7 @@ class AccountReimbursementLine(models.Model):
         currency_field="currency_id",
         default=0.0,
     )
+
     is_imported = fields.Boolean()
     new_discount = fields.Float(
         string="Discount (%)",
@@ -120,25 +121,6 @@ class AccountReimbursementLine(models.Model):
         default=0.0,
     )
 
-    @api.onchange('new_discount', 'price_unit', 'quantity')
-    def _onchange_new_discount(self):
-        for line in self:
-            total = line.price_unit * line.quantity
-            line.discount_amount = total * line.new_discount / 100 if total else 0.0
-
-    @api.onchange('discount_amount')
-    def _onchange_discount_amount(self):
-        for line in self:
-            total = line.price_unit * line.quantity
-            line.new_discount = (line.discount_amount / total) * 100 if total else 0.0
-    # @api.onchange('price_unit')
-    # def onchange_price_unit(self):
-    #     for line in self:
-    #         # Update discount based on list price
-    #         if line.product_id.list_price > 0:
-    #             line.new_discount = ((line.product_id.list_price - line.price_unit) / line.product_id.list_price) * 100
-    #         else:
-    #             line.new_discount = 0.0
     @api.depends('product_id', 'company_id', 'display_type')
     def _compute_tax_ids(self):
         for line in self:

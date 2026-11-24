@@ -70,6 +70,8 @@ class ShopifyUpsyncWebhookController(http.Controller):
             '/odoo/api/v1/order/create/account/<int:account_id>',
             '/api/v1/order/update/account/<int:account_id>',
             '/odoo/api/v1/order/update/account/<int:account_id>',
+            '/api/v1/order/paid/account/<int:account_id>',
+            '/odoo/api/v1/order/paid/account/<int:account_id>',
         ],
         type='http',
         auth='public',
@@ -186,6 +188,36 @@ class ShopifyUpsyncWebhookController(http.Controller):
                 {'success': False, 'message': str(error)},
                 status=500,
             )
+
+    @http.route(
+        [
+            '/api/v1/order/fulfillment/account/<int:account_id>',
+            '/odoo/api/v1/order/fulfillment/account/<int:account_id>',
+        ],
+        type='http',
+        auth='public',
+        methods=['POST'],
+        csrf=False,
+        save_session=False,
+    )
+    @verify_shopify_webhook_hmac
+    def shopify_fulfillment_webhook(self, account_id, **kwargs):
+        """Receive Shopify FULFILLMENTS_CREATE / FULFILLMENTS_UPDATE webhooks.
+
+        Creates the Odoo delivery only when payment is PAID and fulfillments exist.
+        """
+        try:
+            raw_payload = request.httprequest.data.decode('utf-8', errors='replace') if request.httprequest.data else ''
+            _logger.info("Shopify fulfillment webhook for account %s: %s", account_id, raw_payload)
+
+            account = request.shopify_webhook_account
+            payload = json.loads(raw_payload) if raw_payload else {}
+
+            account.sudo().process_shopify_fulfillment_webhook(payload)
+            return self._json_response({'success': True, 'message': 'Fulfillment processed'})
+        except Exception as error:
+            _logger.exception("Error processing Shopify fulfillment webhook for account %s", account_id)
+            return self._json_response({'success': False, 'message': str(error)}, status=500)
 
     def _json_response(self, data, status=200):
         return request.make_response(

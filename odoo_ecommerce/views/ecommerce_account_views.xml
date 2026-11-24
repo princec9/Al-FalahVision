@@ -131,7 +131,7 @@
                                     <field name="company_id" invisible="1" force_save="1" readonly="state == 'connected'" />
                                     <field name="user_id" readonly="state == 'connected'"/>
                                     <field name="team_id" readonly="state == 'connected'"/>
-                                    <field name="auto_create_invoice" readonly="state == 'connected'"/>
+                                    <field name="auto_create_invoice"/>
                                 </group>
                             </group>
                         </page>

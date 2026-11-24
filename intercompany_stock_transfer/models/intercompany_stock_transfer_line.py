@@ -8,6 +8,7 @@ class IntercompanyStockTransferLine(models.Model):
     _order = "id"
 
     sequence = fields.Integer(string="Sequence", default=10)
+    is_selected = fields.Boolean(string="Select")
     serial_no = fields.Integer(
         string="S.No",
         compute="_compute_serial_no",

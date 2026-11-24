@@ -115,6 +115,7 @@ class ECommerceAccount(models.Model):
     auto_create_invoice = fields.Boolean(
         string="Create Invoice",
         help="Automatically create an invoice in Odoo when importing paid orders from E-Commerce.",
+        default=True,
     )
 
     # Display fields.
@@ -600,7 +601,30 @@ class ECommerceAccount(models.Model):
                     'server',
                 )
                 continue  # skip this account and continue with the next one
-            orders_data = result.get('orders') or []
+            orders_data = result if isinstance(result, list) else (result.get('orders') or [])
+            # Also check existing imported orders for this account that are missing an invoice
+            un_invoiced_orders = self.env['sale.order'].search([
+                ('ecommerce_account_id', '=', account.id),
+                ('ecommerce_order_identifier', '!=', False),
+                ('state', '!=', 'cancel'),
+            ], order='id desc', limit=50)
+            un_invoiced_orders = un_invoiced_orders.filtered(
+                lambda so: not so.invoice_ids.filtered(lambda inv: inv.state != 'cancel')
+            )
+            synced_ids = {str(d.get('id')) for d in orders_data}
+            for un_invoiced_order in un_invoiced_orders:
+                if str(un_invoiced_order.ecommerce_order_identifier) in synced_ids:
+                    continue
+                try:
+                    order_data = account._fetch_order_from_ecommerce_by_order_ref(
+                        un_invoiced_order.ecommerce_order_identifier
+                    )
+                    if order_data:
+                        orders_data.append(order_data)
+                        synced_ids.add(str(un_invoiced_order.ecommerce_order_identifier))
+                except Exception as ex:
+                    _logger.warning("Could not fetch order %s for invoice check: %s",
+                                   un_invoiced_order.ecommerce_order_identifier, ex)
             count_fetched += len(orders_data)
             for order_data in orders_data:
                 try:
@@ -1419,19 +1443,33 @@ class ECommerceAccount(models.Model):
         if order:
             self._process_utm_data(order, order_data)
 
-        if not self.auto_create_invoice:
+        if not self.auto_create_invoice or not order:
             return order
 
         try:
             self._auto_create_invoice_and_payment(order, order_data)
-        except UserError as user_error:
-            self.log_xml(
-                "Error occurred while creating an invoice with sale order id %s on %s account with id %s.\n"
-                "Error description: %s" %
-                (order.id, self.ecommerce_channel_id.name, self.id, user_error),
-                '_process_order_data',
-                'server',
+        except Exception as error:
+            if isinstance(error, PG_CONCURRENCY_EXCEPTIONS_TO_RETRY):
+                raise  # Let the caller retry the whole order on a concurrency error.
+            error_msg = str(error).split('DETAIL')[0].strip()
+            raw_ref = order_data.get('reference') or order.ec_order_ref or order_data.get('id') or ''
+            shopify_order_display = raw_ref if str(raw_ref).startswith('#') else f"#{raw_ref}"
+            log_error = (
+                f"Shopify Order {shopify_order_display}\n"
+                f"Payment Status: {(order_data.get('financial_status') or 'PAID').strip().upper()}\n"
+                f"Odoo Sales Order: {order.name}\n"
+                f"Invoice Creation: FAILED\n"
+                f"Error: {error_msg}"
             )
+            _logger.error("%s", log_error)
+            self.log_xml(
+                message=log_error,
+                func='_process_order_data',
+                level='Error',
+            )
+            # Do not re-raise: the sales order was synchronized successfully and must be kept even
+            # though the invoice could not be created. The next synchronization of this E-commerce
+            # order will retry the invoice creation without creating a duplicate.
         return order
 
     def _create_order_from_data(self, order_data):
@@ -1541,6 +1579,12 @@ class ECommerceAccount(models.Model):
                 offer.matched_product_template_id.display_name + "\n" +
                 (line_data.get('description') or f"[{offer.sku}] {offer.name}")
             )  # description only after the newline ('\n') is visible in the UI.
+            properties = line_data.get('properties') or []
+            props_text = "\n".join(
+                f"{p['key']}: {p['value']}"
+                for p in properties
+                if p.get('key') and p.get('value') not in (None, '')
+            )
             ecommerce_price_unit = float(line_data.get('price_unit') or 0.0)
             odoo_price_unit = float((subtotal / qty_ordered) if qty_ordered else 0)
             if currency.compare_amounts(ecommerce_price_unit, odoo_price_unit) != 0 and not currency.is_zero(ecommerce_price_unit):
@@ -1554,6 +1598,7 @@ class ECommerceAccount(models.Model):
                 'tax_ids': [Command.link(tax.id) for tax in taxes],
                 'display_type': line_data.get('display_type', False),
                 'ecommerce_line_identifier': str(line_data.get('id')),
+                'shopify_line_properties': props_text or False,
             })
 
         discount_lines = order_data.get('discount_lines') or []
@@ -1864,60 +1909,189 @@ class ECommerceAccount(models.Model):
     def _auto_create_invoice_and_payment(self, order, order_data):
         """Auto-create invoice and register payment for paid ecommerce orders.
 
+        This method is idempotent: it is safe to call it again on every synchronization of the
+        same E-commerce order (manual re-sync, retry after a previous failure, or a later sync
+        that observes the payment status change from pending to paid). It never creates more than
+        one (non-cancelled) invoice per sales order:
+        - If a posted invoice already exists, nothing is created; only the payment is registered
+          if it is not yet done.
+        - If a draft invoice already exists (e.g. a previous synchronization created it but failed
+          before posting it), that invoice is posted instead of creating a new one.
+        - Otherwise, a new invoice is created (confirming the sales order first if needed), posted,
+          and its payment is registered.
+
         :param order: sale.order record
         :param order_data: dict with order data from ecommerce platform
         """
-        financial_status = order_data.get('financial_status') or ''
-        adjustment_product = self._find_matching_product(
-            '', 'ecommerce_default_adjustment', "E-commerce Adjustment", 'service',
-        )
-        adjustment_line = order.order_line.filtered(lambda line: line.product_id.id == adjustment_product.id)
-        # Todo: Handle Partial Payment
-        if financial_status != 'PAID' or adjustment_line:
+        self.ensure_one()
+        financial_status = (order_data.get('financial_status') or '').strip().upper()
+        raw_ref = order_data.get('reference') or order.ec_order_ref or order_data.get('id') or ''
+        shopify_order_display = raw_ref if str(raw_ref).startswith('#') else f"#{raw_ref}"
+
+        # Only a Shopify payment confirmed as PAID triggers invoicing. Pending, failed, voided and
+        # partially-paid orders are intentionally left without an invoice.
+        if financial_status != 'PAID':
+            _logger.info(
+                "Invoice creation skipped for Shopify order %s: payment status is %s (not PAID).",
+                shopify_order_display, financial_status,
+            )
             return
 
-        # Order with multiple payment transactions are not handled by Odoo right now.
-        # In that case, Invoice will not be created.
-        payment_provider_codes_count = len(order_data.get('payment_provider_codes') or [])
-        if financial_status == 'PAID' and payment_provider_codes_count > 1:
-            err_msg = "order has multiple payment transactions"
+        # Idempotency guard: never create a second invoice for the same sales order. A cancelled
+        # invoice does not count, so a re-synchronization can still invoice again in that case.
+        invoice = order.invoice_ids.filtered(lambda move: move.state != 'cancel')[:1]
+
+        if invoice and invoice.state == 'posted':
+            log_exists = (
+                f"Shopify Order {shopify_order_display}\n"
+                f"Payment Status: PAID\n"
+                f"Odoo Sales Order: {order.name}\n"
+                f"Invoice: {invoice.name}\n"
+                f"Invoice Status: Posted (Already Exists)"
+            )
+            _logger.info("%s", log_exists)
             self.log_xml(
-                message="Invoice creation ignored for order with reference %s because %s for %s account with id %s. Please create an Invoice and Payment manually." %
-                (order_data.get('id'), err_msg, self.ecommerce_channel_id.name, self.id),
-                func='_process_order_data',
+                message=log_exists,
+                func='_auto_create_invoice_and_payment',
                 level='Info',
             )
+            self._register_ecommerce_invoice_payment(invoice, order, order_data)
             return
 
-        # Create and post invoice
-        invoice = order.with_context(
-            invoice_date=(order_data.get('invoice_date') and dateutil.parser.parse(order_data.get('invoice_date')).replace(tzinfo=None)) or None,
-        )._create_invoices()
+        if not invoice:
+            if order.state == 'cancel':
+                _logger.warning("Invoice not auto-created for order %s: sales order %s is cancelled.", shopify_order_display, order.name)
+                return
 
-        invoice.action_post()
+            if order.state != 'sale':
+                order.action_confirm()
 
-        # Get journal
-        journal = self._get_ecommerce_payment_journal()
-        new_payment = {
-            'payment_date': invoice.invoice_date,
-            'journal_id': journal.id,
-        }
-        if payment_provider_codes_count:
-            payment_provider_code = order_data.get('payment_provider_codes')[0]
-            payment_method_line = self._find_or_create_payment_method(
-                journal=journal,
-                payment_provider_code=payment_provider_code,
+            log_creating = (
+                f"Shopify Order {shopify_order_display}\n"
+                f"Payment Status: PAID\n"
+                f"Odoo Sales Order: {order.name}\n"
+                f"Invoice Status: Creating"
             )
-            new_payment.update({
-                'payment_method_line_id': payment_method_line.id,
-            })
+            _logger.info("%s", log_creating)
+            self.log_xml(
+                message=log_creating,
+                func='_auto_create_invoice_and_payment',
+                level='Info',
+            )
 
-        # Register payment
-        payment_register = self.env['account.payment.register'].with_context(
-            active_model='account.move',
-            active_ids=invoice.ids,
-        ).create(new_payment)
-        payment_register.action_create_payments()
+            try:
+                with self.env.cr.savepoint():
+                    invoice = order.with_context(
+                        invoice_date=(order_data.get('invoice_date') and dateutil.parser.parse(order_data.get('invoice_date')).replace(tzinfo=None)) or None,
+                        ecommerce_auto_invoice=True,
+                        raise_if_nothing_to_invoice=False,
+                    )._create_invoices()
+                    if not invoice:
+                        raise UserError(self.env._("No invoiceable lines found on sales order %s.", order.name))
+                    if invoice.state != 'posted':
+                        invoice.action_post()
+            except Exception as error:
+                if isinstance(error, PG_CONCURRENCY_EXCEPTIONS_TO_RETRY):
+                    raise
+                error_msg = str(error).split('DETAIL')[0].strip()
+                log_error = (
+                    f"Shopify Order {shopify_order_display}\n"
+                    f"Payment Status: PAID\n"
+                    f"Odoo Sales Order: {order.name}\n"
+                    f"Invoice Creation: FAILED\n"
+                    f"Error: {error_msg}"
+                )
+                _logger.error("%s", log_error)
+                self.log_xml(
+                    message=log_error,
+                    func='_auto_create_invoice_and_payment',
+                    level='Error',
+                )
+                return
+        else:
+            # An unposted draft invoice already exists
+            log_draft = (
+                f"Shopify Order {shopify_order_display}\n"
+                f"Payment Status: PAID\n"
+                f"Odoo Sales Order: {order.name}\n"
+                f"Invoice Status: Creating"
+            )
+            _logger.info("%s", log_draft)
+            self.log_xml(
+                message=log_draft,
+                func='_auto_create_invoice_and_payment',
+                level='Info',
+            )
+            if invoice.state != 'posted':
+                try:
+                    with self.env.cr.savepoint():
+                        invoice.action_post()
+                except Exception as error:
+                    if isinstance(error, PG_CONCURRENCY_EXCEPTIONS_TO_RETRY):
+                        raise
+                    error_msg = str(error).split('DETAIL')[0].strip()
+                    log_error = (
+                        f"Shopify Order {shopify_order_display}\n"
+                        f"Payment Status: PAID\n"
+                        f"Odoo Sales Order: {order.name}\n"
+                        f"Invoice Creation: FAILED\n"
+                        f"Error: {error_msg}"
+                    )
+                    _logger.error("%s", log_error)
+                    self.log_xml(
+                        message=log_error,
+                        func='_auto_create_invoice_and_payment',
+                        level='Error',
+                    )
+                    return
+
+        log_posted = (
+            f"Shopify Order {shopify_order_display}\n"
+            f"Payment Status: PAID\n"
+            f"Odoo Sales Order: {order.name}\n"
+            f"Invoice: {invoice.name}\n"
+            f"Invoice Status: Posted"
+        )
+        _logger.info("%s", log_posted)
+        self.log_xml(
+            message=log_posted,
+            func='_auto_create_invoice_and_payment',
+            level='Info',
+        )
+
+        self._register_ecommerce_invoice_payment(invoice, order, order_data)
+
+    def _register_ecommerce_invoice_payment(self, invoice, order, order_data):
+        """Register payment on a posted ecommerce invoice if not already paid."""
+        if not invoice or invoice.state != 'posted':
+            return
+        if invoice.payment_state in ('paid', 'in_payment', 'reversed'):
+            return
+        try:
+            journal = self._get_ecommerce_payment_journal()
+            if not journal:
+                return
+
+            new_payment = {
+                'payment_date': invoice.invoice_date or fields.Date.context_today(self),
+                'journal_id': journal.id,
+            }
+            payment_provider_codes = order_data.get('payment_provider_codes') or []
+            if payment_provider_codes:
+                payment_method_line = self._find_or_create_payment_method(
+                    journal=journal,
+                    payment_provider_code=payment_provider_codes[0],
+                )
+                new_payment['payment_method_line_id'] = payment_method_line.id
+
+            payment_register = self.env['account.payment.register'].with_context(
+                active_model='account.move',
+                active_ids=invoice.ids,
+            ).create(new_payment)
+            payment_register.action_create_payments()
+        except Exception as pay_err:
+            _logger.warning("Could not register payment for invoice %s on order %s: %s",
+                           invoice.name, order.name, pay_err)
 
     def _process_utm_data(self, order, order_data):
         """Process utm data from ecommerce and set it on the sale order.

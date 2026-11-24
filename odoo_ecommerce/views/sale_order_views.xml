@@ -21,6 +21,15 @@
             <xpath expr="//notebook/page[@name='order_lines']/field[@name='order_line']/list//field[@name='qty_invoiced']" position="after">
                 <field name="ecommerce_line_identifier" optional="hide" column_invisible="not parent.ecommerce_account_id"/>
             </xpath>
+            <xpath expr="//notebook/page[@name='order_lines']/field[@name='order_line']/form" position="inside">
+                <group string="Shopify Custom Properties"
+                       invisible="not shopify_line_properties">
+                    <field name="shopify_line_properties"
+                           widget="text"
+                           nolabel="1"
+                           readonly="1"/>
+                </group>
+            </xpath>
             <group name="order_details" position="inside">
                 <field name="ecommerce_account_id" invisible="not ecommerce_account_id"/>
                 <field name="ecommerce_order_identifier" invisible="not ecommerce_account_id"/>

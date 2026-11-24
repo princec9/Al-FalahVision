@@ -2259,27 +2259,37 @@ def push_product_metafields_to_shopify(account, shopify_product_id, metafield_li
     # ------------------------------------------------------------------ #
     # DELETE ARCHIVED METAFIELDS
     # ------------------------------------------------------------------ #
+    deleted_map = {}
     if archived_lines:
         to_delete_ids = []
+        ns_key_by_id = {}
         for arch in archived_lines:
             if isinstance(arch, dict):
                 ns, key = arch.get('namespace'), arch.get('key')
             else:
                 ns, key = arch.namespace, arch.key
             if (ns, key) in existing_by_ns_key:
-                to_delete_ids.append(existing_by_ns_key[(ns, key)])
-                _logger.info("Shopify metafield %s.%s was deleted from Odoo, marking for deletion on Shopify (ID: %s)", ns, key, existing_by_ns_key[(ns, key)])
+                mf_id = existing_by_ns_key[(ns, key)]
+                to_delete_ids.append(mf_id)
+                ns_key_by_id[const.GLOBAL_METAFIELD_ID + mf_id] = (ns, key)
+                _logger.info("Shopify metafield %s.%s was deleted from Odoo, marking for deletion on Shopify (ID: %s)", ns, key, mf_id)
+            else:
+                # Already deleted / does not exist on Shopify, mark as success
+                deleted_map[(ns, key)] = True
         
         if to_delete_ids:
             try:
                 deleted_gids = delete_metafield_from_shopify(account, to_delete_ids)
                 if deleted_gids:
                     _logger.info("PRODUCT METAFIELD VALUE DELETED: Successfully deleted metafields from Shopify: %s", deleted_gids)
+                    for gid in deleted_gids:
+                        if gid in ns_key_by_id:
+                            deleted_map[ns_key_by_id[gid]] = True
             except Exception as e:
                 _logger.error("Failed to delete stale metafields from Shopify: %s", e)
 
     if not metafield_lines:
-        return {'success': {}, 'errors': []}
+        return {'success': {}, 'errors': [], 'deleted': deleted_map}
 
     _logger.info(
         "PUSH PRE-FLIGHT — Product %s (gid=%s): fetched %d existing Shopify metafield(s). "
@@ -2496,7 +2506,7 @@ def push_product_metafields_to_shopify(account, shopify_product_id, metafield_li
             "PUSH SUMMARY — product %s: %d metafield(s) pushed/updated successfully.",
             shopify_product_id, len(result_map),
         )
-    return {'success': result_map, 'errors': errors}
+    return {'success': result_map, 'errors': errors, 'deleted': deleted_map}
 
 
 def delete_metafield_from_shopify(account, metafield_ids):

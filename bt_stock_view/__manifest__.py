@@ -1,6 +1,6 @@
 {
     'name': 'BT Stock View - All Companies & Branches',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.4',
     'category': 'Inventory/Reporting',
     'summary': 'Read-only stock overview of all products across all companies and branches, '
                'even for users who are not allowed in those companies.',
@@ -18,7 +18,7 @@ an allowed company for those branches.
     'author': 'Broadtech',
     'website': 'https://www.broadtech.com',
     'license': 'LGPL-3',
-    'depends': ['stock'],
+    'depends': ['stock','vendor_in_out'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',

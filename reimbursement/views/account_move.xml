@@ -129,16 +129,6 @@ records.write({'is_reimbursement': False})
             </xpath>
         </field>
     </record>
-    <record id="view_account_journal_form_is_insurance" model="ir.ui.view">
-        <field name="name">account.journal.form.is.insurance</field>
-        <field name="model">account.journal</field>
-        <field name="inherit_id" ref="account.view_account_journal_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='type']" position="after">
-                <field name="is_insurance"/>
-            </xpath>
-        </field>
-    </record>
 
     <!--    <record id="view_account_form_inherit_hide_buttons" model="ir.ui.view">-->
     <!--        <field name="name">account.move.form.inherit.hide.buttons</field>-->

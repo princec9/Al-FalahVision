@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Milestone Form (popup)  -->
+    <record id="benefit_accrual_plan_level_view_form" model="ir.ui.view">
+        <field name="name">benefit.accrual.plan.level.form</field>
+        <field name="model">benefit.accrual.plan.level</field>
+        <field name="arch" type="xml">
+            <form string="New Milestone">
+                <sheet>
+
+                    <!-- ACCRUAL LEVEL OPTIONS -->
+                    <group string="Accrual Level Options" col="2">
+
+                        <!-- Row 1: Frequency — "1 Day(s) Daily" -->
+                        <group col="1" colspan="1">
+                            <label for="added_value"
+                                   string="Set the employee accrual frequency :"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <field name="added_value"
+                                       nolabel="1"
+                                       style="width:80px;"/>
+                                <field name="added_value_type"
+                                       nolabel="1"/>
+                                <field name="frequency"
+                                       nolabel="1"/>
+                            </div>
+                        </group>
+
+                        <!-- Row 2: Milestone reached -->
+                        <group col="1" colspan="1">
+                            <label for="milestone_reached"
+                                   string="This milestone will be reached :"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="milestone_reached"
+                                   nolabel="1" widget="radio"/>
+                            <div invisible="milestone_reached != 'after'"
+                                 style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                                <field name="start_count"
+                                       nolabel="1"
+                                       style="width:80px;"/>
+                                <field name="start_type"
+                                       nolabel="1"/>
+                                <span>from the start of allocation</span>
+                            </div>
+                        </group>
+
+                    </group>
+
+                    <!-- CARRY OVER OPTIONS -->
+                    <group string="Carry Over Options" col="2">
+
+                        <group col="1" colspan="1">
+                            <label for="action_with_unused_accruals"
+                                   string="After a year, unused benefit will be :"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="action_with_unused_accruals"
+                                   nolabel="1" widget="radio"/>
+                        </group>
+
+                    </group>
+
+                    <!-- CAP OPTIONS -->
+                    <group string="Cap Options" col="2">
+
+                        <!-- Yearly cap -->
+                        <group col="1" colspan="1">
+                            <label for="cap_accrued_time"
+                                   string="Define a yearly cap?"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="cap_accrued_time"
+                                   nolabel="1"/>
+                            <field name="maximum_leave"
+                                   nolabel="1"
+                                   string="Yearly Cap"
+                                   invisible="not cap_accrued_time"/>
+                        </group>
+
+                        <!-- Balance cap -->
+                        <group col="1" colspan="1">
+                            <label for="cap_accrued_balance"
+                                   string="Define a balance cap?"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="cap_accrued_balance"
+                                   nolabel="1"/>
+                            <field name="maximum_balance"
+                                   nolabel="1"
+                                   string="Balance Cap"
+                                   invisible="not cap_accrued_balance"/>
+                        </group>
+
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Accrual Plan Form -->
+    <record id="benefit_accrual_plan_view_form" model="ir.ui.view">
+        <field name="name">benefit.accrual.plan.form</field>
+        <field name="model">benefit.accrual.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+
+                    <!-- Smart buttons -->
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button"
+                            type="object"
+                            name="action_open_allocations"
+                            icon="fa-calendar"
+                            invisible="allocation_count == 0">
+                            <field name="allocation_count"
+                                widget="statinfo"
+                                string="Allocations"/>
+                        </button>
+                    </div>
+
+                    <!-- Archive ribbon -->
+                    <widget name="web_ribbon" title="Archived"
+                        bg_color="text-bg-danger"
+                        invisible="active"/>
+                    <field name="active" invisible="1"/>
+
+                    <!-- Title -->
+                    <div class="oe_title">
+                        <label for="name" string="Title"/>
+                        <h1>
+                            <field name="name"
+                                placeholder="Unnamed Plan"/>
+                        </h1>
+                    </div>
+
+                    <!-- CONFIGURATION -->
+                    <group string="CONFIGURATION" col="2">
+
+                        <group col="1" colspan="1">
+                            <label for="accrued_gain_time"
+                                string="When the time is accrued?"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="accrued_gain_time"
+                                nolabel="1" widget="radio"/>
+                        </group>
+
+                        <group col="1" colspan="1">
+                            <label for="is_based_on_worked_time"
+                                string="It is based on worked time?"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="is_based_on_worked_time"
+                                nolabel="1" widget="radio"/>
+                        </group>
+
+                        <group col="1" colspan="1">
+                            <label for="carryover_date"
+                                string="Do you need a carry-over of the accrued days from one year to another?"/>
+                        </group>
+                        <group col="1" colspan="1">
+                            <field name="carryover_date"
+                                nolabel="1"/>
+                        </group>
+
+                        <group col="1" colspan="1"
+                            invisible="not carryover_date">
+                            <label for="carryover_type"
+                                string="When do you want the accrued time left to be carried-over?"/>
+                        </group>
+                        <group col="1" colspan="1"
+                            invisible="not carryover_date">
+                            <field name="carryover_type"
+                                nolabel="1" widget="radio"/>
+                        </group>
+
+                        <group col="1" colspan="1"
+                            invisible="carryover_type != 'other' or not carryover_date">
+                            <label for="carryover_day"
+                                string="Custom carry-over date"/>
+                        </group>
+                        <group col="1" colspan="1"
+                            invisible="carryover_type != 'other' or not carryover_date">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <field name="carryover_day"
+                                    nolabel="1" style="width: 50px;"/>
+                                <field name="carryover_month"
+                                    nolabel="1"/>
+                            </div>
+                        </group>
+
+                    </group>
+
+                    <!-- Milestones with inline form popup -->
+                    <field name="level_ids" string="Milestones">
+                        <list string="Milestones"
+                            open_form_view="true">
+                            <field name="added_value"
+                                string="Rate"/>
+                            <field name="added_value_type"
+                                string="Unit"/>
+                            <field name="frequency"
+                                string="Frequency"/>
+                            <field name="milestone_reached"
+                                string="Reached"/>
+                            <field name="start_count"
+                                string="After"
+                                invisible="milestone_reached != 'after'"/>
+                            <field name="start_type"
+                                string="Period"
+                                invisible="milestone_reached != 'after'"/>
+                            <field name="maximum_leave"
+                                string="Yearly Cap"
+                                invisible="not cap_accrued_time"/>
+                        </list>
+                        <form string="New Milestone">
+                            <sheet>
+
+                                <!-- ACCRUAL LEVEL OPTIONS -->
+                                <group string="Accrual Level Options"
+                                    col="2">
+                                    <group col="1" colspan="1">
+                                        <label for="added_value"
+                                            string="Set the employee accrual frequency :"/>
+                                    </group>
+                                    <group col="1" colspan="1">
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <field name="added_value"
+                                                nolabel="1"
+                                                style="width:80px;"/>
+                                            <field name="added_value_type"
+                                                nolabel="1"/>
+                                            <field name="frequency"
+                                                nolabel="1"/>
+                                        </div>
+                                    </group>
+
+                                    <group col="1" colspan="1">
+                                        <label for="milestone_reached"
+                                            string="This milestone will be reached :"/>
+                                    </group>
+                                    <group col="1" colspan="1">
+                                        <field name="milestone_reached"
+                                            nolabel="1"
+                                            widget="radio"/>
+                                        <div invisible="milestone_reached != 'after'"
+                                            style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                                            <field name="start_count"
+                                                nolabel="1"
+                                                style="width:80px;"/>
+                                            <field name="start_type"
+                                                nolabel="1"/>
+                                            <span>from the start of allocation</span>
+                                        </div>
+                                    </group>
+                                </group>
+
+                                <!-- CARRY OVER OPTIONS -->
+                                <group string="Carry Over Options"
+                                    col="2">
+                                    <group col="1" colspan="1">
+                                        <label for="action_with_unused_accruals"
+                                            string="After a year, unused benefit will be :"/>
+                                    </group>
+                                    <group col="1" colspan="1">
+                                        <field name="action_with_unused_accruals"
+                                            nolabel="1"
+                                            widget="radio"/>
+                                    </group>
+                                </group>
+
+                                <!-- CAP OPTIONS -->
+                                <group string="Cap Options"
+                                    col="2">
+                                    <group col="1" colspan="1">
+                                        <label for="cap_accrued_time"
+                                            string="Define a yearly cap?"/>
+                                    </group>
+                                    <group col="1" colspan="1">
+                                        <field name="cap_accrued_time"
+                                            nolabel="1"/>
+                                        <field name="maximum_leave"
+                                            nolabel="1"
+                                            string="Yearly Cap"
+                                            invisible="not cap_accrued_time"/>
+                                    </group>
+
+                                    <group col="1" colspan="1">
+                                        <label for="cap_accrued_balance"
+                                            string="Define a balance cap?"/>
+                                    </group>
+                                    <group col="1" colspan="1">
+                                        <field name="cap_accrued_balance"
+                                            nolabel="1"/>
+                                        <field name="maximum_balance"
+                                            nolabel="1"
+                                            string="Balance Cap"
+                                            invisible="not cap_accrued_balance"/>
+                                    </group>
+                                </group>
+
+                            </sheet>
+                        </form>
+                    </field>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Accrual Plan List -->
+    <record id="benefit_accrual_plan_view_list" model="ir.ui.view">
+        <field name="name">benefit.accrual.plan.list</field>
+        <field name="model">benefit.accrual.plan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="Title"/>
+                <field name="accrued_gain_time"
+                    string="When accrued"/>
+                <field name="level_count"
+                    string="Milestones"/>
+                <field name="allocation_count"
+                    string="Allocations"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="benefit_accrual_plan_action"
+        model="ir.actions.act_window">
+        <field name="name">Accrual Plans</field>
+        <field name="res_model">benefit.accrual.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>
+

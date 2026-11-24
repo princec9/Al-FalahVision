@@ -1,6 +1,6 @@
 {
     "name": "Optical Discount Precision",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.1.1",
     "summary": "Display Discount (%) with 2 decimals on Sales Orders, Invoices and Purchase Orders",
     "description": """
 Extension of Optical Prescription Management.
@@ -21,6 +21,7 @@ not modified.
         "views/account_move_views.xml",
         "views/report_templates.xml",
         "views/purchase_order_views.xml",
+        "report/invoice_report.xml",
     ],
     "installable": True,
     "application": False,

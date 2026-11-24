@@ -24,7 +24,7 @@
             <form string="Inter-Company Transfer">
                 <header>
                     <button name="action_confirm" type="object" string="Confirm"
-                            class="btn-primary" invisible="state != 'draft'"/>
+                            class="btn-primary" invisible="state != 'draft' or create_uid != uid"/>
                     <button name="action_receive" type="object" string="Receive"
                             class="btn-primary" invisible="state != 'in_transit'"/>
                     <button name="action_cancel" type="object" string="Cancel"
@@ -34,6 +34,7 @@
                 </header>
 
                 <sheet>
+                    <field name="create_uid" invisible="1"/>
 
 
                     <div class="oe_button_box" name="button_box">
@@ -93,15 +94,16 @@
                     <group/>
                     <notebook>
                         <page string="Products">
-                            <field name="line_ids" readonly="state != 'draft'">
+                            <field name="line_ids" readonly="state not in ('draft', 'confirmed')">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
+                                    <field name="is_selected" string="Select" column_invisible="parent.state == 'draft'" readonly="parent.state != 'confirmed'"/>
                                     <field name="serial_no" string="S.No" readonly="1"/>
-                                    <field name="product_id"/>
-                                    <field name="quantity"/>
-                                    <field name="product_uom_id"/>
-                                    <field name="source_on_hand_qty"/>
-                                    <field name="destination_on_hand_qty"/>
+                                    <field name="product_id" readonly="parent.state != 'draft'"/>
+                                    <field name="quantity" readonly="parent.state != 'draft'"/>
+                                    <field name="product_uom_id" readonly="parent.state != 'draft'"/>
+                                    <field name="source_on_hand_qty" readonly="1"/>
+                                    <field name="destination_on_hand_qty" readonly="1"/>
                                 </list>
                             </field>
                             <group class="oe_subtotal_footer" colspan="2" name="transfer_total">

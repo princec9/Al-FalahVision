@@ -8,18 +8,6 @@ from odoo import fields, models, _
 from odoo.exceptions import UserError
 
 
-
-class AccountJournal(models.Model):
-    _inherit = "account.journal"
-
-    is_insurance = fields.Boolean(
-        string="Is Insurance",
-        default=False,
-        copy=True,
-        help="Mark this journal as an insurance payment journal.",
-    )
-
-
 class InvoiceExpenseWizard(models.TransientModel):
     _name = "invoice.expense.wizard"
     _description = "Invoice Expense Wizard"

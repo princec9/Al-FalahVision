@@ -414,6 +414,10 @@ def _shopify_order_common_query():
                 barcode
             }
             variantTitle
+            customAttributes {
+                key
+                value
+            }
         }
     }
     name
@@ -960,8 +964,18 @@ def _shopify_prepare_order_structure(order_node):
     email = ((order_node.get('customer') or {}).get('defaultEmailAddress') or {}).get('emailAddress')
     shipping_address = order_node.get('shippingAddress')
     transactions = order_node.get('transactions', [])
-    sale_transactions = [transaction for transaction in transactions if transaction.get('kind') in ['SALE', 'CAPTURE']]
-    payment_provider_codes = [transaction.get('gateway', '') for transaction in sale_transactions]
+    sale_transactions = [
+        transaction for transaction in transactions
+        if transaction.get('kind') in ['SALE', 'CAPTURE']
+        and (transaction.get('status') or '').upper() == 'SUCCESS'
+    ]
+    if not sale_transactions and transactions:
+        sale_transactions = [
+            t for t in transactions if t.get('kind') in ['SALE', 'CAPTURE']
+        ]
+    payment_provider_codes = list(dict.fromkeys(
+        transaction.get('gateway', '') for transaction in sale_transactions if transaction.get('gateway')
+    ))
 
     order = {
         'billing_address': {
@@ -977,7 +991,7 @@ def _shopify_prepare_order_structure(order_node):
         } if billing_address else {},
         'currency_code': order_node.get('currencyCode'),
         'customer_id': (order_node.get('customer') or {}).get('id', '').replace(const.GLOBAL_CUSTOMER_ID, ''),
-        'financial_status': order_node.get('displayFinancialStatus'),
+        'financial_status': (order_node.get('displayFinancialStatus') or order_node.get('financialStatus') or '').upper(),
         'date_order': convert_iso_to_utc(order_node.get('createdAt')),
         'fulfillments': _shopify_prepare_fulfillments_structure(order_node.get('fulfillments')),
         'id': order_node.get('id').replace(const.GLOBAL_ORDER_ID, ''),
@@ -1084,6 +1098,7 @@ def _shopify_prepare_order_lines_structure(line_nodes):
             } if product_variant else {},
             'qty_ordered': line_node.get('quantity', 0),
             'tax_amount': _calculate_shopify_tax(line_node.get('taxLines')),
+            'properties': line_node.get('customAttributes') or [],
         }
         order_lines.append(order_line)
     return order_lines

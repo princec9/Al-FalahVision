@@ -58,6 +58,21 @@ class SaleOrder(models.Model):
                 )
         return super()._action_cancel()
 
+    def _get_invoiceable_lines(self, final=False):
+        if self.env.context.get('ecommerce_auto_invoice'):
+            from odoo.tools.float_utils import float_is_zero
+            precision = self.env['decimal.precision'].precision_get('Product Unit')
+            invoiceable_lines = self.env['sale.order.line']
+            for line in self.order_line:
+                if line.display_type in ('line_section', 'line_subsection', 'line_note'):
+                    invoiceable_lines |= line
+                    continue
+                remaining_qty = line.product_uom_qty - line.qty_invoiced
+                if not float_is_zero(remaining_qty, precision_digits=precision):
+                    invoiceable_lines |= line
+            return invoiceable_lines
+        return super()._get_invoiceable_lines(final=final)
+
     def _prepare_invoice(self):
         invoice_vals = super()._prepare_invoice()
         if self.ec_order_ref:

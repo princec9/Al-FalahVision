@@ -104,6 +104,18 @@
                         </list>
                     </field>
                 </page>
+                <!-- Order Custom Properties (prescription / per-order attributes from Shopify) -->
+                <page name="shopify_order_properties" string="Order Properties"
+                      invisible="not shopify_order_line_ids">
+                    <field name="shopify_order_line_ids">
+                        <list>
+                            <field name="order_id" string="Order" readonly="1"/>
+                            <field name="order_partner_id" string="Customer" readonly="1"/>
+                            <field name="order_date_order" string="Date" readonly="1"/>
+                            <field name="shopify_line_properties" string="Properties" readonly="1"/>
+                        </list>
+                    </field>
+                </page>
             </xpath>
 
         </field>

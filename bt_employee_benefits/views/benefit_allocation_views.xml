@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Allocation Form -->
+    <record id="benefit_allocation_view_form" model="ir.ui.view">
+        <field name="name">benefit.allocation.form</field>
+        <field name="model">benefit.allocation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" string="Confirm"
+                        type="object" class="oe_highlight"
+                        invisible="state != 'draft'"/>
+                    <button name="action_approve" string="Approve"
+                        type="object" class="oe_highlight"
+                        invisible="state != 'confirm'"
+                        groups="bt_employee_benefits.group_benefit_manager"/>
+                    <button name="action_refuse" string="Refuse"
+                        type="object" invisible="state in ('draft','refuse','validate')"
+                        groups="bt_employee_benefits.group_benefit_manager"/>
+                    <button name="action_reset_draft" string="Reset to Draft"
+                        type="object" invisible="state not in ('confirm','refuse')"/>
+                    <field name="state" widget="statusbar"
+                        statusbar_visible="draft,confirm,validate"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Allocation Description"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="employee_id"/>
+                            <field name="department_id"/>
+                            <field name="holiday_status_id"/>
+                        </group>
+                        <group>
+                            <field name="allocation_type" widget="radio"/>
+                            <field name="accrual_plan_id"
+                                invisible="allocation_type != 'accrual'"/>
+                            <field name="approver_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Duration">
+                            <field name="number_of_days"
+                                invisible="holiday_status_id and holiday_status_id.request_unit == 'hour'"/>
+                            <field name="number_of_hours"
+                                invisible="holiday_status_id and holiday_status_id.request_unit != 'hour'"/>
+                            <field name="duration_display"/>
+                        </group>
+                        <group string="Validity">
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Accrual" invisible="allocation_type != 'accrual'">
+                            <group>
+                                <field name="lastcall"/>
+                                <field name="nextcall"/>
+                            </group>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- Allocation List View -->
+    <record id="benefit_allocation_view_list" model="ir.ui.view">
+        <field name="name">benefit.allocation.list</field>
+        <field name="model">benefit.allocation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="holiday_status_id"/>
+                <field name="allocation_type"/>
+                <field name="duration_display"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="state" widget="badge"
+                    decoration-success="state == 'validate'"
+                    decoration-warning="state == 'confirm'"
+                    decoration-danger="state == 'refuse'"/>
+            </list>
+        </field>
+    </record>
+   <!-- Allocation Search View -->
+<record id="benefit_allocation_view_search" model="ir.ui.view">
+    <field name="name">benefit.allocation.search</field>
+    <field name="model">benefit.allocation</field>
+    <field name="arch" type="xml">
+        <search string="Search Allocations">
+            <field name="name"/>
+            <field name="employee_id"/>
+            <field name="holiday_status_id"/>
+            <filter name="draft" string="Draft"
+                domain="[('state','=','draft')]"/>
+            <filter name="confirm" string="Confirmed"
+                domain="[('state','=','confirm')]"/>
+            <filter name="validate" string="Approved"
+                domain="[('state','=','validate')]"/>
+            <separator/>
+            <filter name="accrual" string="Accrual"
+                domain="[('allocation_type','=','accrual')]"/>
+            <separator/>
+            <filter name="group_employee" string="Employee"
+                context="{'group_by': 'employee_id'}"/>
+            <filter name="group_type" string="Benefit Type"
+                context="{'group_by': 'holiday_status_id'}"/>
+            <filter name="group_state" string="Status"
+                context="{'group_by': 'state'}"/>
+        </search>
+    </field>
+</record>
+
+    <!-- Allocation Action -->
+    <record id="benefit_allocation_action" model="ir.actions.act_window">
+        <field name="name">Benefit Allocations</field>
+        <field name="res_model">benefit.allocation</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="benefit_allocation_view_search"/>
+    </record>
+
+    <!-- Server Actions for Bulk Operations -->
+    <record id="action_confirm_allocation" model="ir.actions.server">
+        <field name="name">Confirm</field>
+        <field name="model_id" ref="model_benefit_allocation"/>
+        <field name="binding_model_id" ref="model_benefit_allocation"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+            records.action_confirm()
+        </field>
+    </record>
+
+    <record id="action_approve_allocation" model="ir.actions.server">
+        <field name="name">Approve</field>
+        <field name="model_id" ref="model_benefit_allocation"/>
+        <field name="binding_model_id" ref="model_benefit_allocation"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+            records.action_approve()
+        </field>
+    </record>
+</odoo>

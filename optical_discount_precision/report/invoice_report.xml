@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_invoice_document_discount_amount"
+              inherit_id="account.report_invoice_document">
+        <xpath expr="//table[@name='invoice_line_table']//th[@name='th_quantity']" position="after">
+            <th name="th_discount_amount" class="text-end">
+                <span>Disc. Amount</span>
+            </th>
+        </xpath>
+        <xpath expr="//table[@name='invoice_line_table']//td[@name='td_quantity']" position="after">
+            <td name="td_discount_amount" class="text-end">
+                <span t-out="line.price_unit * line.quantity * line.discount / 100.0"
+                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"
+                      class="text-nowrap"/>
+            </td>
+        </xpath>
+    </template>
+</odoo>

@@ -17,9 +17,9 @@ const TILE_PIVOTS = {
 
 // tiles with their own unique menu (exact match on last menu segment)
 const MENU_PIVOTS = {
-    "Down Payment Lines": { pivot: "18", domain: [] },
-    "Invoiced excl. Down Payment Lines": { pivot: "20", domain: [] },
-    "Invoices": { pivot: "14", domain: [] },
+    "Down Payment Lines": { pivot: "19", domain: [] },
+    "Invoiced excl. Down Payment Lines": { pivot: "21", domain: [] },
+    "Invoices": { pivot: "23", domain: [] },
     "Orders with Discount": { pivot: "11", domain: [] },
 };
 

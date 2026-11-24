@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mail_template_benefit_request_submitted" model="mail.template">
+        <field name="name">Benefit Request: Submitted for Approval</field>
+        <field name="model_id" ref="model_benefit_request"/>
+        <field name="subject">Benefit Request Pending Your Approval: {{ object.name }}</field>
+        <field name="email_from">{{ object.employee_id.user_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.employee_id.parent_id.user_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Dear <t t-out="object.employee_id.parent_id.name"/>,</p>
+                <p>
+                    A new benefit request has been submitted by <strong><t t-out="object.employee_id.name"/></strong>
+                    and is pending your approval.
+                </p>
+                <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.name"/></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Benefit Type</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.holiday_status_id.name"/></td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date From</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.date_from"/></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Duration</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.duration_display"/></td>
+                    </tr>
+                </table>
+                <p>Please review and take action at your earliest convenience.</p>
+                <p>Regards,<br/><t t-out="object.employee_id.name"/></p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <record id="mail_template_benefit_request_approved" model="mail.template">
+        <field name="name">Benefit Request: Approved</field>
+        <field name="model_id" ref="model_benefit_request"/>
+        <field name="subject">Your Benefit Request Has Been Approved: {{ object.name }}</field>
+        <field name="email_from">{{ object.approver_id.user_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.employee_id.user_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Dear <t t-out="object.employee_id.name"/>,</p>
+                <p>
+                    Your benefit request has been <strong style="color: #28a745;">Approved</strong>
+                    by <strong><t t-out="object.approver_id.name"/></strong>.
+                </p>
+                <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.name"/></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Benefit Type</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.holiday_status_id.name"/></td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Date From</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.date_from"/></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Duration</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.duration_display"/></td>
+                    </tr>
+                </table>
+                <p>Regards,<br/><t t-out="object.approver_id.name"/></p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <record id="mail_template_benefit_request_refused" model="mail.template">
+        <field name="name">Benefit Request: Refused</field>
+        <field name="model_id" ref="model_benefit_request"/>
+        <field name="subject">Your Benefit Request Has Been Refused: {{ object.name }}</field>
+        <field name="email_from">{{ object.approver_id.user_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.employee_id.user_id.email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Dear <t t-out="object.employee_id.name"/>,</p>
+                <p>
+                    Your benefit request has been <strong style="color: #dc3545;">Refused</strong>.
+                </p>
+                <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Reference</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.name"/></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Benefit Type</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.holiday_status_id.name"/></td>
+                    </tr>
+                    <tr style="background-color: #f2f2f2;">
+                        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Refuse Reason</strong></td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><t t-out="object.refuse_reason or 'No reason provided'"/></td>
+                    </tr>
+                </table>
+                <p>Please contact HR for further clarification.</p>
+                <p>Regards,<br/>HR Team</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+</odoo>

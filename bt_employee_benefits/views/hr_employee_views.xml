@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_inherit_bt_benefit" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.benefit</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_employee_benefits"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-ticket"
+                    help="Benefit Requests">
+                    <field name="benefit_count" widget="statinfo" string="Benefits"/>
+                </button>
+            </xpath>
+            <xpath expr="//group[@name='managers']" position="inside">
+                <field name="benefit_manager_id" placeholder="Auto-validation" string="Benefit" context="{'default_company_id': company_id}" widget="many2one_avatar_user"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

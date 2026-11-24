@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_move_form_intercompany" model="ir.ui.view">
+        <field name="name">account.move.form.intercompany</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[@name='journal_div']" position="after">
+
+                <field name="intercompany_type"
+                       invisible="move_type != 'in_invoice'"
+                       widget="radio"
+                       readonly="state != 'draft' or counterpart_move_id"/>
+
+                <field name="invoice_to_company_id"
+                       invisible="intercompany_type == False"
+                       required="intercompany_type != False"
+                       readonly="state != 'draft' or counterpart_move_id"/>
+
+                <field name="counterpart_move_id"
+                       invisible="intercompany_type == False"/>
+
+            </xpath>
+
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='product_id']"
+                   position="after">
+
+                <field name="intercompany_purchase_line_id"
+                       column_invisible="1"/>
+
+            </xpath>
+             <xpath expr="//div[@groups='account.group_account_invoice,account.group_account_readonly'][contains(@class, 'alert-info')]"
+                   position="replace"/>
+            <xpath expr="//div[@groups='account.group_account_invoice,account.group_account_readonly'][contains(@class, 'alert-info')]"
+                   position="replace"/>
+            <xpath expr="//div[@groups='account.group_account_invoice,account.group_account_readonly'][contains(@class, 'alert-info')]"
+                   position="replace"/>
+            <xpath expr="//div[@groups='account.group_account_invoice,account.group_account_readonly'][contains(@class, 'alert-info')]"
+                   position="replace"/>
+
+            <xpath expr="//div[contains(@invisible, 'display_inactive_currency_warning')]" position="replace"/>
+            <xpath expr="//div[contains(@invisible, 'display_inactive_currency_warning')]" position="replace"/>
+
+        </field>
+    </record>
+
+</odoo>

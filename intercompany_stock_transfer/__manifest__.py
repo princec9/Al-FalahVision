@@ -1,6 +1,6 @@
 {
     'name': 'Inter-Company Stock Transfer (Transit)',
-    'version': '19.0.1.0.8',
+    'version': '19.0.1.3.0',
     'category': 'Inventory/Inventory',
     'summary': 'Inventory-only inter-company stock transfer through a shared transit location',
     'description': '''
@@ -18,10 +18,13 @@ or accounting valuation entries for its own moves.
         'security/ir.model.access.csv',
 
         'data/sequence.xml',
+        'data/ir_sequence_data.xml',
         'views/intercompany_stock_transfer_views.xml',
         'views/res_config_settings_views.xml',
         'views/intercompany_analysis.xml',
+        "views/material_request_views.xml",
         'views/menu_views.xml',
+	'report/stock_picking_report.xml',
     ],
     'demo': [],
     'installable': True,

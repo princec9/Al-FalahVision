@@ -111,13 +111,13 @@
                                 <div class="inv-co-name">
                                     <b t-out="o.company_id.name"/>
                                 </div>
-                                <div t-out="', '.join([x for x in [c.street, c.street2, c.city, c.state_id.name, c.country_id.name] if x])"/>
+                                <div t-out="', '.join([x for x in [c.street, c.street2, c.state_id.name, c.country_id.name] if x])"/>
                                 <div>
-                                    <span t-if="c.phone">Landline:
+                                    <span t-if="c.phone">PH:
                                         <span t-out="c.phone"/>
                                     </span>
                                     <span t-if="c.phone and o.company_id.vat">|</span>
-                                    <span t-if="o.company_id.facility_number">Facility Number:
+                                    <span t-if="o.company_id.facility_number">
                                         <span t-out="o.company_id.facility_number"/>
                                     </span>
                                 </div>
@@ -141,6 +141,9 @@
                                     </div>
                                     <div class="inv-cust" t-if="partner.emarates_id">Emirates ID:
                                         <span t-out="partner.emarates_id"/>
+                                    </div>
+				    <div class="inv-cust" t-if="partner.vat">TRN:
+                                        <span t-out="partner.vat"/>
                                     </div>
                                 </div>
 
@@ -231,7 +234,7 @@
                                                     <span t-out="'%.2f' % l.discount"/>
                                                 </td>
                                                 <td class="nowrap" style="text-align:right; padding-left:1mm;">
-                                                    <span t-out="', '.join(['%g%' % x for x in l.tax_ids.mapped('amount')])"/>
+                                                    <span t-out="', '.join(['{:g}%'.format(x) for x in l.tax_ids.mapped('amount')])"/>
                                                 </td>
                                                 <td class="nowrap" style="text-align:right; padding-left:1mm;">
                                                     <span t-out="'{:,.2f}'.format(l.price_total - l.price_subtotal)"/>

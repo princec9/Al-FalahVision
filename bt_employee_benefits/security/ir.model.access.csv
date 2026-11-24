@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_benefit_accrual_plan,benefit.accrual.plan,model_benefit_accrual_plan,group_benefit_user,1,0,0,0
+access_benefit_accrual_plan_manager,benefit.accrual.plan.manager,model_benefit_accrual_plan,group_benefit_manager,1,1,1,1
+access_benefit_accrual_plan_level,benefit.accrual.plan.level,model_benefit_accrual_plan_level,group_benefit_user,1,0,0,0
+access_benefit_accrual_plan_level_manager,benefit.accrual.plan.level.manager,model_benefit_accrual_plan_level,group_benefit_manager,1,1,1,1
+access_benefit_allocation,benefit.allocation,model_benefit_allocation,group_benefit_user,1,0,0,0
+access_benefit_allocation_manager,benefit.allocation.manager,model_benefit_allocation,group_benefit_manager,1,1,1,1
+access_benefit_request,benefit.request,model_benefit_request,group_benefit_user,1,1,1,0
+access_benefit_request_manager,benefit.request.manager,model_benefit_request,group_benefit_manager,1,1,1,1
+access_benefit_type,benefit.type,model_benefit_type,group_benefit_user,1,0,0,0
+access_benefit_type_manager,benefit.type.manager,model_benefit_type,group_benefit_manager,1,1,1,1

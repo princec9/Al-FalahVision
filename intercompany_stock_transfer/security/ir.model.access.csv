@@ -5,3 +5,5 @@ access_intercompany_stock_transfer_line_user,intercompany.stock.transfer.line.us
 access_intercompany_stock_transfer_line_admin,intercompany.stock.transfer.line.admin,model_intercompany_stock_transfer_line,group_intercompany_transfer_admin,1,1,1,1
 access_intercompany_transfer_report_user,intercompany.transfer.report.user,model_intercompany_transfer_report,group_intercompany_transfer_user,1,1,1,0
 access_intercompany_transfer_report_admin,intercompany.transfer.report.admin,model_intercompany_transfer_report,group_intercompany_transfer_admin,1,1,1,1
+access_material_request_user,material.request.user,model_material_request,base.group_user,1,1,1,1
+access_material_request_line_user,material.request.line.user,model_material_request_line,base.group_user,1,1,1,1

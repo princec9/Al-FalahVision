@@ -248,6 +248,62 @@ class ECommerceAccount(models.Model):
         order_data = self._fetch_order_from_ecommerce_by_order_ref(str(order_ref))
         return self._process_order_data(order_data)
 
+    def process_shopify_fulfillment_webhook(self, payload):
+        """Process a Shopify FULFILLMENTS_CREATE webhook payload.
+
+        Creates and validates the Odoo delivery (stock picking) only when:
+          - Order payment is complete (financial_status == 'PAID')
+          - Order has at least one fulfillment (fulfillment_status is set)
+        """
+        self.ensure_one()
+        if self.channel_code != 'shopify':
+            raise UserError(_("This API is only available for Shopify accounts."))
+        if self.state != 'connected':
+            raise UserError(_("Please connect your Shopify account first."))
+
+        order_ref = str(payload.get('order_id') or '')
+        if not order_ref:
+            raise UserError(_("Fulfillment webhook payload must include an order_id."))
+
+        order_data = self._fetch_order_from_ecommerce_by_order_ref(order_ref)
+
+        financial_status = (order_data.get('financial_status') or '').upper()
+        fulfillments = order_data.get('fulfillments') or []
+
+        _logger.info(
+            "Fulfillment webhook for order %s on account %s: payment=%s, fulfillments=%d",
+            order_ref, self.id, financial_status, len(fulfillments),
+        )
+
+        if financial_status != 'PAID':
+            _logger.info(
+                "Skipping delivery creation for order %s — payment status is %s (not PAID)",
+                order_ref, financial_status,
+            )
+            return
+
+        if not fulfillments:
+            _logger.info(
+                "Skipping delivery creation for order %s — no fulfillments found",
+                order_ref,
+            )
+            return
+
+        ecommerce_order_id = str(order_data.get('id') or order_ref)
+        order = self.sale_order_ids.filtered(
+            lambda o: o.ecommerce_order_identifier == ecommerce_order_id
+        )
+        if not order:
+            _logger.info("Order %s not found in Odoo — running full sync", order_ref)
+            return self._process_order_data(order_data)
+
+        location_id = self._get_order_location(order_data)
+        self._find_or_create_moves(order, location_id, fulfillments)
+        _logger.info(
+            "Delivery created/updated for order %s (Odoo SO %s) from fulfillment webhook",
+            order_ref, order.name,
+        )
+
     # === CORE PUSH LOGIC === #
 
     def _push_product_template_to_shopify(self, offers):
@@ -590,6 +646,23 @@ class ECommerceAccount(models.Model):
 
         success_map = result.get('success', {})
         per_line_errors = {(item[0], item[1]): item[2] for item in result.get('errors', [])}
+        deleted_map = result.get('deleted', {})
+
+        for line in archived_lines:
+            if (line.namespace, line.key) in deleted_map:
+                line.write({
+                    'shopify_metafield_id': False,
+                    'last_sync_direction': 'ODOO_TO_SHOPIFY',
+                    'last_sync_status': 'success',
+                    'last_sync_error': False,
+                    'last_sync_date': fields.Datetime.now(),
+                })
+                self._log_metafield_sync(
+                    "ODOO_TO_SHOPIFY DELETE — Successfully deleted metafield %s.%s from Shopify for product %s"
+                    % (line.namespace, line.key, template.name),
+                    '_push_product_metafields_to_shopify', 'INFO',
+                )
+
         for line in active_lines:
             if not line.value:
                 # Blank value was not sent. Clear any previous failed status, but preserve valid sync info.

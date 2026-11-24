@@ -10,7 +10,6 @@ class SaleOrderLine(models.Model):
     # No automatic discount: the pricelist discount is only used as a limit
     # ------------------------------------------------------------------
 
-
     def _get_display_price(self):
         """Unit price after the pricelist is applied.
 
@@ -20,6 +19,7 @@ class SaleOrderLine(models.Model):
         """
         self.ensure_one()
         return self._get_pricelist_price()
+
     @api.depends('product_id')
     def _compute_discount(self):
         for line in self:
@@ -73,7 +73,6 @@ class SaleOrderLine(models.Model):
         )
 
     def _reset_exceeded_discounts(self):
-        """Reset over-limit discounts to the allowed maximum and return a warning."""
         messages = []
         for line in self:
             limit, source = line._get_exceeded_discount_limit()

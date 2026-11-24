@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Product Warranty Management',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.0',
     'category': 'Sales',
     'summary': 'Add and manage warranty details for products',
     'description': """

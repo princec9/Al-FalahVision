@@ -13,11 +13,15 @@
                 <field name="warehouse_name"/>
                 <field name="location_name" optional="show"/>
                 <field name="lot_name" optional="hide"/>
-                <field name="quantity" sum="Total"/>
                 <field name="reserved_quantity" sum="Total" optional="hide"/>
-                <field name="available_quantity" sum="Total"/>
+                <field name="incoming_qty" sum="Total"/>
+                <field name="outgoing_qty" sum="Total"/>
+                <field name="sales_qty" sum="Total"/>
+                <field name="purchase_qty" sum="Total"/>
                 <field name="sales_return_qty" sum="Total"/>
                 <field name="purchase_return_qty" sum="Total"/>
+                <field name="quantity" sum="Total"/>
+                <field name="available_quantity" sum="Total"/>
                 <field name="return_date" optional="hide"/>
                 <field name="uom_name"/>
             </list>
@@ -32,37 +36,41 @@
                 <field name="product_name" type="row"/>
                 <field name="company_name" type="col"/>
                 <field name="quantity" type="measure"/>
+                <field name="incoming_qty" type="measure"/>
+                <field name="outgoing_qty" type="measure"/>
+                <field name="sales_qty" type="measure"/>
+                <field name="purchase_qty" type="measure"/>
                 <field name="sales_return_qty" type="measure"/>
                 <field name="purchase_return_qty" type="measure"/>
             </pivot>
         </field>
     </record>
 
-    <record id="bt_stock_view_search" model="ir.ui.view">
-        <field name="name">bt.stock.view.search</field>
-        <field name="model">bt.stock.view</field>
-        <field name="arch" type="xml">
-            <search string="Stock Overview">
-                <field name="product_name"
-                       filter_domain="['|', '|', ('product_name', 'ilike', self), ('default_code', 'ilike', self), ('barcode', 'ilike', self)]"/>
-                <field name="company_name"/>
-                <field name="warehouse_name"/>
-                <field name="location_name"/>
-                <field name="lot_name"/>
-                <field name="return_date"/>
-                <separator/>
-                <filter name="positive" string="In Stock" domain="[('quantity', '&gt;', 0)]"/>
-                <filter name="negative" string="Negative Stock" domain="[('quantity', '&lt;', 0)]"/>
-                <filter name="with_sales_return" string="With Sales Return" domain="[('sales_return_qty', '&gt;', 0)]"/>
-                <filter name="with_purchase_return" string="With Purchase Return" domain="[('purchase_return_qty', '&gt;', 0)]"/>
-                    <filter name="group_product" string="Product" context="{'group_by': 'product_name'}"/>
-                    <filter name="group_company" string="Company / Branch" context="{'group_by': 'company_name'}"/>
-                    <filter name="group_warehouse" string="Warehouse" context="{'group_by': 'warehouse_name'}"/>
-                    <filter name="group_location" string="Location" context="{'group_by': 'location_name'}"/>
-                    <filter name="group_category" string="Product Category" context="{'group_by': 'category_name'}"/>
-            </search>
-        </field>
-    </record>
+<!--    <record id="bt_stock_view_search" model="ir.ui.view">-->
+<!--        <field name="name">bt.stock.view.search</field>-->
+<!--        <field name="model">bt.stock.view</field>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <search string="Stock Overview">-->
+<!--                <field name="product_name"-->
+<!--                       filter_domain="['|', '|', ('product_name', 'ilike', self), ('default_code', 'ilike', self), ('barcode', 'ilike', self)]"/>-->
+<!--                <field name="company_name"/>-->
+<!--                <field name="warehouse_name"/>-->
+<!--                <field name="location_name"/>-->
+<!--                <field name="lot_name"/>-->
+<!--                <field name="return_date"/>-->
+<!--                <separator/>-->
+<!--                <filter name="positive" string="In Stock" domain="[('quantity', '&gt;', 0)]"/>-->
+<!--                <filter name="negative" string="Negative Stock" domain="[('quantity', '&lt;', 0)]"/>-->
+<!--                <filter name="with_sales_return" string="With Sales Return" domain="[('sales_return_qty', '&gt;', 0)]"/>-->
+<!--                <filter name="with_purchase_return" string="With Purchase Return" domain="[('purchase_return_qty', '&gt;', 0)]"/>-->
+<!--                    <filter name="group_product" string="Product" context="{'group_by': 'product_name'}"/>-->
+<!--                    <filter name="group_company" string="Company / Branch" context="{'group_by': 'company_name'}"/>-->
+<!--                    <filter name="group_warehouse" string="Warehouse" context="{'group_by': 'warehouse_name'}"/>-->
+<!--                    <filter name="group_location" string="Location" context="{'group_by': 'location_name'}"/>-->
+<!--                    <filter name="group_category" string="Product Category" context="{'group_by': 'category_name'}"/>-->
+<!--            </search>-->
+<!--        </field>-->
+<!--    </record>-->
 
     <record id="bt_stock_view_action" model="ir.actions.act_window">
         <field name="name">Stock Overview (All Companies)</field>

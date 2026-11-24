@@ -71,6 +71,18 @@ class ProductTemplate(models.Model):
         inverse_name='product_tmpl_id',
         string="Shopify Metafields",
     )
+    shopify_order_line_ids = fields.One2many(
+        comodel_name='sale.order.line',
+        compute='_compute_shopify_order_line_ids',
+        string="Order Lines with Custom Properties",
+    )
+
+    def _compute_shopify_order_line_ids(self):
+        for tmpl in self:
+            tmpl.shopify_order_line_ids = self.env['sale.order.line'].search([
+                ('product_id.product_tmpl_id', '=', tmpl.id),
+                ('shopify_line_properties', '!=', False),
+            ])
 
     @api.model_create_multi
     def create(self, vals_list):

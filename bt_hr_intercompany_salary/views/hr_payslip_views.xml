@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_hr_payslip_form_intercompany" model="ir.ui.view">
+        <field name="name">hr.payslip.form.intercompany</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_intercompany_invoices"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-exchange"
+                        invisible="intercompany_invoice_count == 0">
+                    <field name="intercompany_invoice_count"
+                           widget="statinfo"
+                           string="Intercompany Journal Entries"/>
+                </button>
+            </xpath>
+
+            <xpath expr="//header" position="inside">
+                <field name="intercompany_status"
+                       widget="badge"
+                       decoration-info="intercompany_status == 'pending'"
+                       decoration-success="intercompany_status == 'generated'"
+                       decoration-danger="intercompany_status == 'cancelled'"
+                       invisible="intercompany_status == 'na'"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Salary Allocation"
+                      name="intercompany_allocation"
+                      invisible="not employee_id or not employee_id.is_multi_company_employee">
+
+                    <field name="allocation_line_ids"
+                           readonly="state == 'validated'"
+                           context="{'default_payslip_id': id}">
+                        <list string="Salary Allocation" editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="company_id"/>
+                            <field name="contribution_percentage" string="Contribution (%)"/>
+                            <field name="amount" string="Amount"/>
+                            <field name="is_parent_company" readonly="1" optional="show"/>
+                            <field name="intercompany_partner_id" optional="hide"/>
+                            <field name="invoice_display" readonly="1" optional="show" string="Journal Entry"/>
+                            <field name="currency_id" column_invisible="True"/>
+                        </list>
+                    </field>
+
+                    <group>
+                        <group>
+                            <field name="total_allocation_percentage"
+                                   string="Total Allocation (%)"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+
+                    <div class="o_row mt-2" invisible="state == 'validated'">
+                        <button name="action_refresh_allocation_amounts"
+                                type="object"
+                                string="Refresh Amounts"
+                                class="btn btn-secondary"
+                                icon="fa-refresh"
+                                title="Recompute amounts from current salary computation"/>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert"
+                         invisible="(total_allocation_percentage &gt;= 99.99 and total_allocation_percentage &lt;= 100.01) or not allocation_line_ids">
+                        <i class="fa fa-warning"/>
+                        Total allocation percentage is
+                        <field name="total_allocation_percentage" readonly="1" nolabel="1"/>%
+                        — it should equal 100%.
+                    </div>
+
+                    <div class="o_row mt-2" invisible="state != 'validated'">
+                        <button name="action_regenerate_intercompany_invoices"
+                                type="object"
+                                string="Regenerate Journal Entries"
+                                class="btn btn-secondary"
+                                icon="fa-refresh"
+                                invisible="intercompany_status not in ('pending', 'cancelled')"
+                                confirm="This will generate new intercompany journal entries. Continue?"/>
+                    </div>
+
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

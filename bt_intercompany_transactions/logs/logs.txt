@@ -1,0 +1,5 @@
+V1.1.0 By Basil Khan AH
+    1. Previous version was V1.0.6.
+    2. Added a condition when searching for the existence of a counterpart journal entry while posting bills of the intercompany type “Counterpart Journal Entry.”
+        a. It was not working as expected when attempting to post a bill that did not have a bill number. It was attempting to update the entries that Odoo automatically created for bank transactions, which caused the system to throw an “Invalid Operation” error.
+

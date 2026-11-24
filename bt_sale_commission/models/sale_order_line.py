@@ -10,7 +10,7 @@ class SaleOrderLine(models.Model):
     # "Sale Order Line".
     salesperson_partner_id = fields.Many2one(
         'res.partner',
-        string="Sales Person",
+        string="Line Sales Person",
         domain="[('is_salesperson', '=', True)]",
         index=True,
         copy=True,

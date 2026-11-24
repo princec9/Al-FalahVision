@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_employee_company_contribution_user,employee.company.contribution.user,model_employee_company_contribution,hr.group_hr_user,1,0,0,0
+access_employee_company_contribution_manager,employee.company.contribution.manager,model_employee_company_contribution,hr.group_hr_manager,1,1,1,1
+access_employee_company_contribution_payroll_user,employee.company.contribution.payroll.user,model_employee_company_contribution,hr_payroll.group_hr_payroll_user,1,0,0,0
+access_employee_company_contribution_payroll_manager,employee.company.contribution.payroll.manager,model_employee_company_contribution,hr_payroll.group_hr_payroll_manager,1,1,1,1
+access_hr_payslip_allocation_line_payroll_user,hr.payslip.allocation.line.payroll.user,model_hr_payslip_allocation_line,hr_payroll.group_hr_payroll_user,1,1,1,0
+access_hr_payslip_allocation_line_payroll_manager,hr.payslip.allocation.line.payroll.manager,model_hr_payslip_allocation_line,hr_payroll.group_hr_payroll_manager,1,1,1,1
+access_material_request_user,material.request.user,model_material_request,base.group_user,1,1,1,1
+access_material_request_line_user,material.request.line.user,model_material_request_line,base.group_user,1,1,1,1

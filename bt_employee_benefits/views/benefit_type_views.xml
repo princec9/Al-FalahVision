@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="benefit_type_view_tree" model="ir.ui.view">
+        <field name="name">benefit.type.tree</field>
+        <field name="model">benefit.type</field>
+        <field name="arch" type="xml">
+            <list string="Benefit Types">
+                <field name="name"/>
+                <field name="time_type"/>
+                <field name="leave_validation_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="benefit_type_view_form" model="ir.ui.view">
+        <field name="name">benefit.type.form</field>
+        <field name="model">benefit.type</field>
+        <field name="arch" type="xml">
+            <form string="Benefit Types">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="New" class="oe_inline"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="time_type"/>
+                            <field name="notify_hr"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group name="time_off_requests" string="BENEFIT REQUESTS">
+                            <field name="leave_validation_type" widget="radio"/>
+                            <field name="request_unit"/>
+                        </group>
+                        <group name="allocation_requests" string="ALLOCATION REQUESTS">
+                            <field name="requires_allocation"/>
+<!--                            <field name="employee_requests" invisible="not requires_allocation"/>-->
+                            <field name="allocation_validation_type" widget="radio" invisible="not requires_allocation"/>
+                        </group>
+                        <group name="configuration" string="CONFIGURATION">
+                            <field name="allow_leave_encashment"/>
+                            <field name="support_document"/>
+                        </group>
+<!--                        <group name="negative_cap" string="NEGATIVE CAP">-->
+<!--                            <field name="allows_negative"/>-->
+<!--                        </group>-->
+<!--                        <group name="display_option" string="DISPLAY OPTION">-->
+<!--                            <field name="color_name"/>-->
+<!--                            <field name="cover_image" widget="image"/>-->
+<!--                        </group>-->
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="benefit_type_action" model="ir.actions.act_window">
+        <field name="name">Benefit Types</field>
+        <field name="res_model">benefit.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new benefit type
+            </p>
+        </field>
+    </record>
+
+
+</odoo>
