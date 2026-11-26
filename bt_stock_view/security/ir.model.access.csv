@@ -1,2 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_bt_stock_view_viewer,bt.stock.view viewer,model_bt_stock_view,bt_stock_view.group_bt_stock_viewer,1,0,0,0
