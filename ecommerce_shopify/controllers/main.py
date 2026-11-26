@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import json
 import logging
 import re
 import secrets
@@ -37,7 +38,21 @@ class ShopifyController(http.Controller):
 
         if account.state == 'connected':
             _logger.warning("Account with id %d is already connected.", account_id)
-            return request.redirect(f'{request.httprequest.url_root}odoo/ecommerce.account/{account_id}')
+            redirect_url = f'{request.httprequest.url_root}odoo/ecommerce.account/{account_id}'
+            html_body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<script>window.top.location.href = {json.dumps(redirect_url)};</script>
+</body>
+</html>"""
+            return request.make_response(
+                html_body,
+                headers=[
+                    ('Content-Type', 'text/html; charset=utf-8'),
+                    ('Content-Security-Policy', "frame-ancestors https://admin.shopify.com https://*.myshopify.com"),
+                ],
+            )
 
         data = {k: v for k, v in data.items() if k != 'hmac'}  # remove hmac from data.
         sorted_data = sorted(data.items())  # Sort data alphabetically
@@ -81,18 +96,33 @@ class ShopifyController(http.Controller):
             f"redirect_uri={redirect_uri}&state={nonce}"
         )
 
-        response = request.make_response('', headers=[
-            ('Location', oauth_url)
-        ])
-        response.status_code = 302
+        # Shopify embeds the app URL in an iframe inside admin.shopify.com.
+        # A plain 302 redirect fails because X-Frame-Options blocks the iframe.
+        # Content-Security-Policy frame-ancestors takes precedence over X-Frame-Options,
+        # and window.top.location.href escapes the iframe so OAuth runs in the full window.
+        html_body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Connecting to Shopify...</title></head>
+<body>
+<script>window.top.location.href = {json.dumps(oauth_url)};</script>
+</body>
+</html>"""
+        response = request.make_response(
+            html_body,
+            headers=[
+                ('Content-Type', 'text/html; charset=utf-8'),
+                ('Content-Security-Policy', "frame-ancestors https://admin.shopify.com https://*.myshopify.com"),
+            ]
+        )
+        response.status_code = 200
         response.set_cookie(
             'shopify_oauth_state',
             nonce,
             httponly=True,
             secure=True,
-            samesite='Lax',
+            samesite='None',
         )
-        _logger.info("Response set with status code 302 and redirect to OAuth URL.")
+        _logger.info("Response set with top-frame redirect to OAuth URL.")
         return response
 
     @http.route(shopify_auth_callback, type='http')
